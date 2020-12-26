@@ -1,0 +1,174 @@
+<style type="text/css">
+<!--
+#id_Log {
+  width:100%;
+  height:auto;
+  overflow:auto;
+}
+#id_Log .mk-content-right,
+#id_Log .mk-search,
+#id_Log .mk-header {
+  border:0;
+}
+#id_Log .mk-footer {
+  border-right-width:0;
+  border-bottom-width:0;
+}
+-->
+</style>
+<script language="JavaScript" type="text/javascript">
+// #####################################################################
+jQuery(function($){
+  // -------------------------------------------------------------------
+  var $T,
+      slfMenuFile = oUser.menu;
+  // -------------------------------------------------------------------
+  make();
+  // -------------------------------------------------------------------
+  function selectMenu(ui){
+    var oldMenuFile  = $(ui.oldMenu).data("menu"),
+        newMenuFile  = $(ui.newMenu).data("menu");
+
+    if(DEBUG > 0 && newMenuFile != slfMenuFile){
+      var div_menu = $("#id_Content>div").filter('[data-menu="'+oldMenuFile+'"]');
+      $.Topic("selectMenu").unsubscribe(selectMenu);
+      $.Topic("logout").unsubscribe(saveOption);
+      $T.tables("destroy");
+      div_menu.detach();
+      return
+    }
+
+    if(newMenuFile == slfMenuFile){
+      $.Topic("logout").subscribe(saveOption);
+      if(typeof $T != "undefined")
+        $T
+        .tables("refresh")
+        .focus();
+    } else if(oldMenuFile == slfMenuFile){
+      saveOption();
+      $.Topic("logout").unsubscribe(saveOption);
+    }
+  }
+  // -------------------------------------------------------------------
+  function saveOption(){
+    $T.tables("saveOption").focus();
+  }
+  // -------------------------------------------------------------------
+  function make(){
+    // menu events
+    $.Topic("selectMenu").subscribe(selectMenu);
+    $.Topic("logout").subscribe(saveOption);
+    // tables
+    $T = $("#id_Log").tables({
+      colModel: [{
+        indx:   "id",
+        title:  "ID",
+        show:    true,
+        search:  true,
+        align:  "right",
+        width:  "3em"
+      },{
+        indx:   "stmp",
+        title:  "Stamp",
+        show:    true,
+        search:  true,
+        align:  "left",
+        width:  "10em"
+      },{
+        indx:   "dbuser",
+        title:  "User",
+        show:    true,
+        search:  true,
+        align:  "left",
+        width:  "15em"
+      },{
+        indx:   "project",
+        title:  "Project",
+        show:    true,
+        search:  true,
+        align:  "left",
+        width:  "5em"
+      },{
+        indx:   "event",
+        title:  "Event",
+        show:    true,
+        search:  true,
+        align:  "left",
+        width:  "6em"
+      },{
+        indx:   "note",
+        title:  "Note",
+        show:    true,
+        search:  true,
+        align:  "left",
+        width:  "40em"
+      }],
+      accessModel: oAccess[slfMenuFile],
+      dataModel:   $.extend({}, mysqlDataModel),
+      alignTitle:  "center",
+      Left:        5,
+      Header:      null,
+      Footer:      null,
+      ID:         "id",
+      orderBy:    "id",
+      orderType:  "DESC",
+      recId:       0,
+
+      User: oUser.dbuser, // dbuser
+      Sign: "Log",        // navig identification
+
+      SQL_SysBase:  SQL_SYS_BASE,
+      SQL_SysTable: SQL_SYS_TABLE,
+      SQL_Base:     SQL_SYS_BASE,
+      SQL_Table:    "log",
+      SQL_Query:    'SELECT * FROM log',
+      // functions + events
+      i18n:  _,
+      build: goTo
+    });
+    // -----------------------------------------------------------------
+  }
+  // -------------------------------------------------------------------
+  function goTo(){
+    change_all_lang($T);
+    $("div.c_tabs", $T).tabs();
+    setTimeout(function(){
+      $T
+      .tables("refresh")
+      .focus();
+    }, 1000);
+  }
+});
+// #####################################################################
+</script>
+<div id="id_Log" tabindex="1" style="display:none">
+  <form id="id_Log_Form" style="display:block" class="mk-tables-form">
+    <input type="submit" tabindex="-1" style="position:absolute; top:-1000px;display:none">
+    <table id="id_Log_Table" tabindex="2">
+      <tbody>
+        <tr>
+          <td class="ui-widget-content ui-state-disabled" style="width:1%">
+            <input name="id" style="width:4em;text-align:center;background:transparent" type="text" disabled>
+          </td>
+          <td class="ui-widget-content ui-state-disabled" style="width:1%">
+            <input name="stmp" style="width:10em;text-align:center;background:transparent" type="text" disabled>
+          </td>
+          <td class="ui-widget-content ui-state-disabled" style="width:1%">
+            <input name="dbuser" style="width:20em;text-align:center;background:transparent" type="text" disabled>
+          </td>
+          <td class="ui-widget-header"></td>
+          <td class="ui-widget-header lang" style="width:1%">Event</td>
+          <td class="ui-widget-content" style="width:1%">
+            <input type="text" name="event" style="width:10em">
+          </td>
+          <td class="ui-widget-header lang" style="width:1%">Note</td>
+        </tr>
+        <tr>
+          <td class="ui-widget-content" colspan="7" style="height:15em">
+            <textarea name="note"></textarea>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </form>
+</div>

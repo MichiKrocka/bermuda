@@ -1,0 +1,989 @@
+<style type="text/css">
+<!--
+#id_Project {
+  width:100%;
+  height:auto;
+  overflow:auto;
+}
+#id_Project .mk-content-right,
+#id_Project .mk-search,
+#id_Project .mk-header {
+  border:0;
+}
+#id_Project .mk-footer {
+  border-right-width:0;
+  border-bottom-width:0;
+}
+ul.contact #id_Project_Form {
+  overflow-y: scroll;
+  overflow-x: hidden;
+  height: 50px;
+}
+.Admin {
+  display:none;
+}
+.dialog {
+  display:none;
+}
+input.mono {
+  font-family:monospace;
+  width:100%;
+}
+[contenteditable="true"]{
+  display:inline-block;
+  min-width:1em;
+  background-color:#FFFFB3;
+  font-family:monospace;
+  white-space:pre;
+  min-height:1.2em;
+  border:0;
+  margin:0;
+}
+
+.ordner_tab {
+  border-collapse:collapse;
+  table-layout:fixed;
+}
+.ordner_tab tbody tr {
+  counter-increment: rowNumber;
+  border-width:0 !important;
+}
+.ordner_tab tbody tr td:first-child::before {
+  content: counter(rowNumber);
+}
+.ordner_tab tbody td:nth-child(1) {
+  text-align:right;
+  width:2em;
+}
+
+.ordner_tab tbody.PLANER input[type=text],
+.ordner_tab tbody.DOKU input[type=text] {
+  width:43em;
+  background:transparent;
+}
+
+.ordner_tab tbody.OPT input[type=text] {
+  background:transparent;
+}
+.ordner_tab tbody.OPT td:nth-child(2) input[type=text] {
+  width:3em;
+}
+.ordner_tab tbody.OPT td:nth-child(3) input[type=text] {
+  width:15em;
+}
+.ordner_tab tbody.OPT td:nth-child(4) input[type=text] {
+  width:5em;
+}
+.ordner_tab tbody.OPT td:nth-child(5) input[type=text] {
+  width:20em;
+}
+
+td.c_proj_navig {
+  font-size:0.6em;
+}
+td.c_proj_help span {
+  display:none;
+}
+td.c_proj_tab {
+  width:45em;
+}
+-->
+</style>
+<script language="JavaScript" type="text/javascript">
+// #####################################################################
+jQuery(function($){
+  // -------------------------------------------------------------------
+  var $T,
+      slfMenuFile = oUser.menu,
+      eEdit = null,
+      xEdit = false;
+  // -------------------------------------------------------------------
+  make();
+  // -------------------------------------------------------------------
+  function selectMenu(ui){
+    var oldMenuFile  = $(ui.oldMenu).data("menu"),
+        newMenuFile  = $(ui.newMenu).data("menu");
+
+    if(DEBUG > 0 && newMenuFile != slfMenuFile){
+      var div_menu = $("#id_Content>div").filter('[data-menu="'+oldMenuFile+'"]');
+      $.Topic("selectMenu").unsubscribe(selectMenu);
+      $.Topic("logout").unsubscribe(saveOption);
+      $T.tables("destroy");
+      div_menu.detach();
+      return
+    }
+
+    if(newMenuFile == slfMenuFile){
+      $.Topic("logout").subscribe(saveOption);
+      if(typeof $T != "undefined")
+        $T
+        .tables("refresh")
+        .focus();
+    } else if(oldMenuFile == slfMenuFile){
+      saveOption();
+      $.Topic("logout").unsubscribe(saveOption);
+    }
+  }
+  // -------------------------------------------------------------------
+  function saveOption(){
+    $T.tables("saveOption").focus();
+  }
+  // -------------------------------------------------------------------
+  function make(){
+    var insert = false,
+        clone = false,
+        id_clone;
+    // repro
+    REPRO_LST = [];
+    for(var r in REPRO)
+      REPRO_LST.push(r);
+    // menu events
+    $.Topic("selectMenu").subscribe(selectMenu);
+    $.Topic("logout").subscribe(saveOption);
+    // defaults
+    $("input[name=val]", "#id_Project_Form")
+    .data("default", JSON.stringify(project_val));
+    $("input.datepicker", "#id_Project_Form")
+    .data("default", date_time().E);
+    $("input[name=admin]", "#id_Project_Form")
+    .data("default", oUser.dbuser);
+    $("."+oUser.grp, "#id_Project_Form").show();
+    
+    $("input[type='radio'],input[type='checkbox']", "span.dialog")
+    .checkboxradio({
+      icon:false
+    });
+    $("button", ".c_proj_navig")
+    .button()
+    .click(clickSub);
+    $(".ordner_tab")
+    .on("focus", "tr", function(ev){
+      $("tr", ".ordner_tab").removeClass("ui-state-highlight");
+      $(this).addClass("ui-state-highlight");
+    });
+    // tables
+    $T = $("#id_Project").tables({
+      colModel: [{
+        indx:   "id",
+        title:  "ID",
+        show:    true,
+        search:  true,
+        align:  "right",
+        width:  "3em"
+      },{
+        indx:   "state",
+        title:  "S",
+        show:    true,
+        search:  true,
+        align:  "center",
+        width:  "1em"
+      },{
+        indx:   "start",
+        title:  "Start",
+        show:    true,
+        search:  true,
+        align:  "center",
+        width:  "6em"
+      },{
+        indx:   "project",
+        title:  "Project",
+        show:    true,
+        search:  true,
+        align:  "left",
+        width:  "5em"
+      },{
+        indx:   "term",
+        title:  "Term",
+        show:    true,
+        search:  true,
+        align:  "left",
+        width:  "20em"
+      },{
+        indx:   "note",
+        title:  "Note",
+        show:    true,
+        search:  true,
+        align:  "left",
+        width:  "40em"
+      }],
+      accessModel: oAccess[slfMenuFile],
+      dataModel: $.extend({}, mysqlDataModel),
+      alignTitle: "center",
+      Left:       4,
+      Header:     null,
+      Footer:     null,
+      Icons:
+        '<button data-choice="LOG" title="Log"><i class="fa fa-eye"></i></button>'+
+        '<button data-choice="PROJECT" title="Projekt">Mit Projekt arbeiten...</button>'+
+        (oUser.grp == "Admin" ?
+         '<button data-choice="ARCHIVE" title="Projektarchiv">Archiv</button>':
+         ''
+        ),
+      ID:         "id",
+      orderBy:    "id",
+      orderType:  "DESC",
+      recId:      0,
+
+      User:       oUser.dbuser, // dbuser
+      Sign:       "Project",     // navig identification
+      filtFix:    FIXED_FILT,
+
+      SQL_SysBase:  SQL_SYS_BASE,
+      SQL_SysTable: SQL_SYS_TABLE,
+      SQL_Base:     SQL_SYS_BASE,
+      SQL_Table:    "project",
+      SQL_Query:
+        'SELECT *'+
+        'FROM project',
+      // functions + events
+      i18n: _,
+      autoOpt:   {
+        source: function(request, response){
+          var r = new RegExp(request.term, "gi");
+          response(REPRO_LST.filter(function(v){
+            return r.test(v);
+          }));
+        },
+        select: function(ev, ui){
+          //console.log("select auto", ui);
+        },
+        change: function(ev, ui){
+          if(ui.item == null)
+            this.value = "";
+          //console.log("change auto", ui);
+        }
+      },
+      beforeDelete: function(ev, ui){
+        if(oUser.grp == "Admin")
+          return true;
+        // delete only 1 record
+        if($("input[name=admin]", "#id_Project_Form").val() != oUser.dbuser){
+          popup_message(
+            "<p>Nur der Projektadministrator darf das Projekt entfernen!</p>",
+            {"ui-dialog-titlebar": "ui-state-error"},
+            null,
+            3000
+          );
+          return false;
+        }
+        if($("input[name=search]", $T).val() != ""){
+          popup_message(
+            "<p>Das Suchfeld muss leer sein!</p>",
+            {"ui-dialog-titlebar": "ui-state-error"},
+            null,
+            3000
+          );
+          return false;
+        }
+        if(ui.filtSw){
+          popup_message(
+            "<p>Filter ist hier nicht erlaubt!</p>",
+            {"ui-dialog-titlebar": "ui-state-error"},
+            null,
+            3000
+          );
+          return false;
+        }
+        if(!$.isEmptyObject(ui.cont)){
+          popup_message(
+            "<p>Container ist hier nicht erlaubt!</p>",
+            {"ui-dialog-titlebar": "ui-state-error"},
+            null,
+            3000
+          );
+          return false;
+        }
+      },
+      refreshRec:  refreshRec,
+      clickButton: clickButton,
+      beforeEdit: function(ev, ui){
+        if(oUser.grp != "Admin" &&
+           !(oUser.grp == "Project" && ui.insert) &&
+           $("input[name=admin]", "#id_Project_Form").val() != oUser.dbuser
+        ){
+          popup_message(
+            "<p>Nur der Projektadministrator darf das Projekt ändern!</p>",
+            {"ui-dialog-titlebar": "ui-state-error"},
+            null,
+            3000
+          );
+          return false;
+        }
+        $("button", ui.form).button("enable");
+      },
+      closeEdit: function(ev, ui){
+        if(!ui.cancel){
+          insert = ui.insert;
+          clone  = ui.clone;
+          if(clone)
+            id_clone = ui.data[0].id;
+        }
+        $("button", ui.form).button("disable");
+      },
+      build: goTo
+    });
+    // -----------------------------------------------------------------
+    // event handler for refresh record
+    function refreshRec(ev, ui){
+      if(insert){
+        var o = {
+          id:   REST_ID,
+          base: SQL_SYS_BASE,
+          cmd:  null
+        },
+        DB_NEW = $.sprintf("bermuda_%05i", ui.REC[0].id);
+        if(clone){
+          var DB_OLD = $.sprintf("bermuda_%05i", id_clone);
+          o.cmd = [{
+            sgn:   "TRUNC_USER",
+            query: $.sprintf("TRUNCATE %s.sys_user", DB_NEW),
+            para: []
+          },{
+            sgn:   "TRUNC_GTP",
+            query: $.sprintf("TRUNCATE %s.sys_grp", DB_NEW),
+            para: []
+          },{
+            sgn:   "CLONE_USER",
+            query: $.sprintf(
+              "INSERT INTO %s.sys_user (dbuser,note,grp,menu,val,adr,advice,lph) SELECT dbuser,note,grp,menu,val,adr,advice,lph FROM %s.sys_user",
+              DB_NEW, DB_OLD
+            ),
+            para: []
+          },{
+            sgn:   "CLONE_GRP",
+            query: $.sprintf(
+              "INSERT INTO %s.sys_grp (grp,note,lph,access) SELECT grp,note,lph,access FROM %s.sys_grp",
+              DB_NEW, DB_OLD
+            ),
+            para: []
+          },{
+            sgn:   "CLONE_SYS",
+            query: $.sprintf(
+              "INSERT INTO %s.sys SELECT * FROM %s.sys",
+              DB_NEW, DB_OLD
+            ),
+            para: []
+          }];
+        } else {
+          o.cmd = [{
+            sgn:   "INS_USER",
+            query: $.sprintf(
+              "INSERT INTO %s.sys_user (dbuser,note,grp,menu,val,adr,advice,lph) VALUES (?,'','Admin','','',?,'','')",
+              DB_NEW
+            ),
+            para: [oUser.dbuser, oUser.adr]
+          }];
+        }
+        insert = clone = false;
+        $.post("/sql", o, function(D){
+        })
+      }
+    }
+  }
+  // -------------------------------------------------------------------
+  function goTo(){
+    change_all_lang($T);
+    $("div.c_tabs", $T).tabs();
+    setTimeout(function(){
+      $T
+      .tables("refresh")
+      .focus();
+    }, 1000);
+  }
+  // -------------------------------------------------------------------
+});
+// #####################################################################
+function clickButton(ev, ui){
+  if(ui.data.length == 0)
+    return;
+  switch(ui.choice){
+    case "LOG":
+      show_log(ui);
+      return;
+    case "PROJECT":
+      oPrj = ui.data[0];
+      oPrj.val = $.parseJSON(ui.data[0].val); // val
+      project_on(
+        ui.data[0].id,      // id
+        ui.data[0].project, // name
+        ui.data[0].admin    // admin
+      );
+      log(oUser.dbuser, oPrj.project, "WORK", "");
+      return;
+    case "ARCHIVE":
+      archive(ui);
+      return;
+  }
+  // edit form ---------------------------------------------------------
+  var $dialog = $("#"+(ui.choice=="SCHEMA" ? "SCHEMA" : "TABLE")),
+      oVal = $.parseJSON($("input[name=val]", "#id_Project_Form").val());
+//console.log(oVal.doku.join("\n"));
+  // dialog ------------------------------------------------------------
+  $dialog
+  .dialog({
+    width: "auto",
+    title: ui.choice,
+    modal: true,
+    closeOnEscape: false,
+    resizable: false,
+    buttons: [{
+      text: _("OK"),
+      class: "c_OK",
+      click: function(){
+        OK();
+        $(this).dialog("close");
+      }
+    },{
+      text: _("Cancel"),
+      click: function(){
+        $(this).dialog("close");
+      }
+    }],
+    open: function(ev, ui){
+      open();
+    },
+    close: function(ev, ui ){
+      $(this)
+      .off()
+      .dialog("destroy");
+    }
+  }).on("keydown", function(ev){
+    if(ev.keyCode == $.ui.keyCode.ENTER && ev.ctrlKey){
+      var OK = $("button.c_OK", $(this).dialog("widget"));
+      OK.click();
+      return false;
+    } else if(ev.keyCode == $.ui.keyCode.ESCAPE){
+      $(this).dialog("close");
+      return false;
+    }
+    return;
+  });
+  // open - load data --------------------------------------------------
+  function open(){
+    switch(ui.choice){
+      case "SCHEMA":
+        $("span.v", "#SCHEMA").text(oVal.schema.v);
+        $("span.f", "#SCHEMA").text(oVal.schema.f);
+        $("input[name=t]", "#SCHEMA")
+        .val([oVal.schema.t])
+        .button("refresh");
+        $("input[name=s]", "#SCHEMA")
+        .prop("checked", oVal.schema.s == 1)
+        .checkboxradio("refresh");
+        break;
+      case "PLANER":
+        var tr = [];
+        $(".c_proj_header").html(
+          '<table>'+
+            '<tr>'+
+              '<td style="width:2em;text-align:center">#</td>'+
+              '<td>Code-Planer</td>'+
+              '<td></td>'+
+            '</tr>'+
+          '</table>'
+        );
+        for(var i in oVal.planer)
+          tr.push($.sprintf(
+            '<tr>'+
+              '<td></td>'+
+              '<td><input type="text" value="%s"></td>'+
+            '</tr>',
+            oVal.planer[i]
+          ));
+        $(".c_proj_tab table", "#TABLE").html('<tbody class="PLANER">'+tr.join("")+'</tbody>');
+        $(".c_proj_tab table tbody input[type=text]", "#TABLE")
+        .addClass("ui-widget-content");
+        $(".c_proj_tab table tbody tr:first-child input[type=text]", "#TABLE").focus();
+        $(".c_proj_help span", "#TABLE").hide();
+        $(".PLANER", "#TABLE").show();
+        break;
+      case "DOKU":
+        var tr = [];
+        $(".c_proj_header").html(
+          '<table>'+
+            '<tr>'+
+              '<td style="width:2em;text-align:center">#</td>'+
+              '<td>Code-Dokumentation</td>'+
+              '<td></td>'+
+            '</tr>'+
+          '</table>'
+        );
+var aD = [
+"AB-Anleitung Projektraum Bermuda",
+"BB-Baustellenbesprechungen",
+"BE-Baubeschreibung",
+"BG-Baugenehmigung",
+"BL-Beteiligtenliste",
+"BN-Brandschutznachweis",
+"BO-Bodengutachten",
+"BS-Brandschutzgutachten",
+"BV-Bestandsvermessung",
+"CL-Datenblätter Fa. Climalux",
+"EB-EnEV-Berechnung",
+"FK-Farbkonzept",
+"JF-Planer-Jour-Fixe",
+"LG-Lüftungsgutachten",
+"MA-Datenblätter Fa. Mannelli",
+"NH-Berechnungen HLS",
+"NU-Jour-Fixe",
+"ON-Bestandspläne Onischke",
+"PB-Festlegung Planbezeichnung",
+"PL-Planlisten",
+"PS-Projektbesprechungen",
+"SS-Schallschutzgutachten",
+"ST-Statik",
+"TE-Terminplan",
+"TÜ-Türliste",
+"VE-Vermessung",
+"XO-Sonstiges"
+];
+        for(var i in oVal.doku){
+/*
+          if(aD.indexOf(oVal.doku[i]) < 0){
+            for(var j in aD)
+              if(oVal.doku[i] == aD[j].substr(3))
+                oVal.doku[i] = aD[j];
+          }
+*/
+          tr.push($.sprintf(
+            '<tr>'+
+              '<td></td>'+
+              '<td><input type="text" value="%s"></td>'+
+            '</tr>',
+            oVal.doku[i]
+          ));
+        }
+        $(".c_proj_tab table", "#TABLE").html('<tbody class="DOKU">'+tr.join("")+'</tbody>');
+        $(".c_proj_tab table tbody input[type=text]", "#TABLE")
+        .addClass("ui-widget-content");
+        $(".c_proj_tab table tbody tr:first-child input[type=text]", "#TABLE").focus();
+        $(".c_proj_help span", "#TABLE").hide();
+        $(".DOKU", "#TABLE").show();
+        break;
+      case "OPTIONEN":
+        var tr = [];
+        $(".c_proj_header").html(
+          '<table>'+
+            '<tr>'+
+              '<td style="width:1em">#</td>'+
+              '<td style="width:3.2em">Code</td>'+
+              '<td style="width:15.2em">Text</td>'+
+              '<td style="width:5.2em">Optionen</td>'+
+              '<td style="width:5em">Planer</td>'+
+              '<td></td>'+
+            '</tr>'+
+          '</table>'
+        );
+        for(var i in oVal.opt)
+          tr.push($.sprintf(
+            '<tr>'+
+              '<td></td>'+
+              '<td><input type="text" name="c" value="%s"></td>'+
+              '<td><input type="text" name="t" value="%s"></td>'+
+              '<td><input type="text" name="a" value="%s"></td>'+
+              '<td><input type="text" name="p" value="%s"></td>'+
+            '</tr>',
+            oVal.opt[i].c, oVal.opt[i].t, oVal.opt[i].a, oVal.opt[i].p
+          ));
+        $(".c_proj_tab table", "#TABLE").html('<tbody class="OPT">'+tr.join("")+'</tbody>');
+        $(".c_proj_tab table tbody input[type=text]", "#TABLE")
+        .addClass("ui-widget-content");
+        $(".c_proj_tab table tbody tr:first-child input[type=text]", "#TABLE").focus();
+        $(".c_proj_help span", "#TABLE").hide();
+        $(".OPT", "#TABLE").show();
+        break;
+    }
+  //console.log("load", oVal.schema);
+  }
+  // OK - save data ----------------------------------------------------
+  function OK(){
+    switch(ui.choice){
+      case "SCHEMA":
+        oVal.schema.v = $("span.v", "#SCHEMA").text();
+        oVal.schema.f = $("span.f", "#SCHEMA").text();
+        oVal.schema.t = $("input[name=t]:checked", "#SCHEMA").val();
+        oVal.schema.s = $("input[name=s]", "#SCHEMA").is(":checked") ? 1 : 0;
+        break;
+      case "PLANER":
+        oVal.planer = [];
+        $(".ordner_tab tr input[type=text]", "#TABLE").each(function(){
+          if(this.value != "")
+            oVal.planer.push(this.value);
+        });
+        break;
+      case "DOKU":
+        oVal.doku = [];
+        $(".ordner_tab tr input[type=text]", "#TABLE").each(function(){
+          if(this.value != "")
+            oVal.doku.push(this.value);
+        });
+        break;
+      case "OPTIONEN":
+        oVal.opt = [];
+        $(".ordner_tab tr", "#TABLE").each(function(){
+          if(
+            $("input[name=c]", this).val() != "" &&
+            $("input[name=t]", this).val() != "" &&
+            $("input[name=a]", this).val() != ""
+          )
+            oVal.opt.push({
+              c:$("input[name=c]", this).val(),
+              t:$("input[name=t]", this).val(),
+              a:$("input[name=a]", this).val(),
+              p:$("input[name=p]", this).val()
+            });
+        });
+        break;
+    }
+    $("input[name=val]", "#id_Project_Form").val(JSON.stringify(oVal));
+  //console.log("save", oVal.schema);
+  }
+}
+// #####################################################################
+function show_log(ui){
+  if(ui.data.length == 0)
+    return;
+  var $dialog = $(
+    '<div style="width:80%;height:70%">'+
+      '<div id="id_Logs" style="height:30em;overflow:auto">'+
+        '<table class="ordner_tab" style="wwidth:100%">'+
+          '<thead>'+
+            '<tr>'+
+              '<th style="width:2em">#</th>'+
+              '<th>'+_("Stamp")+'</th>'+
+              '<th>'+_("User")+'</th>'+
+              '<th>'+_("Event")+'</th>'+
+              '<th>'+_("Note")+'</th>'+
+            '</tr>'+
+          '</thead>'+
+          '<tbody></tbody>'+
+        '</table>'+
+      '</div>'+
+    '</div>'
+  );
+  $('th', $dialog).addClass("ui-widget-header");
+  var o = {
+    id: REST_ID,
+    base: SQL_SYS_BASE,
+    cmd:  [{
+      sgn:   "LOG",
+      query: "SELECT stmp AS Stamp,dbuser AS User,event AS Event,note AS Note FROM log WHERE project=? ORDER BY stmp DESC",
+      para: [ui.data[0].project]
+    }]
+  };
+  $.post("/sql", o, function(D){
+    if(D.LOG.length == 0){
+      popup_message("Keine Logs vorhanden!");
+      return;
+    }
+    D = D.LOG;
+    var tr = [];
+    for(var i in D)
+      tr.push(
+        '<tr>'+
+          '<td></td>'+
+          '<td style="text-align:center">'+D[i].Stamp+'</td>'+
+          '<td>'+D[i].User+'</td>'+
+          '<td>'+D[i].Event+'</td>'+
+          '<td style="white-space:pre">'+D[i].Note+'</td>'+
+        '</tr>'
+      );
+    $('tbody', $dialog).html(tr.join(""));
+    $('td', $dialog)
+    .css({
+      "vertical-align":"top",
+      "padding":"2px"
+    })
+    .addClass("ui-widget-content");
+    $dialog
+    .dialog({
+      width: "auto",
+      title: "Log / "+ui.data[0].project,
+      modal: true,
+      closeOnEscape: false,
+      resizable: false,
+      buttons: [{
+        text: _("Cancel"),
+        click: function(){
+          $(this).dialog("close");
+        }
+      }],
+      open: function(ev, ui){
+        $("table.ordner_tab", this).stickyTableHeaders({
+          fixedOffset: 0,
+          leftOffset: 0,
+          marginTop: 0,
+          scrollableArea: $("#id_Logs").get(0)
+        });
+      },
+      close: function(ev, ui ){
+        $(this)
+        .off()
+        .dialog("destroy");
+      }
+    });
+  });
+}
+// #####################################################################
+function archive(ui){
+  if(ui.data.length == 0)
+    return;
+  var o = {
+    id: REST_ID,
+    base: SQL_SYS_BASE,
+    cmd:  [{
+      sgn:   "ARCHIV",
+      query: "CALL archive(?)",
+      para: [ui.data[0].id]
+    }]
+  };
+  $.post("/sql", o, function(D){
+  });
+  popup_message(
+    "<p>Projektarchiv wird erzeugt!</p>",
+    {"ui-dialog-titlebar": "ui-state-info"},
+    null,
+    3000
+  );
+}
+// #####################################################################
+function clickSub(ev){
+  var c = $(this).data("choice");
+  switch(c){
+    case "ADD":
+      var e = $(".ordner_tab tr.ui-state-highlight", "#TABLE");
+      e
+      .removeClass("ui-state-highlight")
+      .clone()
+      .insertAfter(e)
+      .addClass("ui-state-highlight");
+      $(".ordner_tab tr.ui-state-highlight input[type=text]", "#TABLE").val("");
+      break;
+    case "DEL":
+      if($(".ordner_tab tr", "#TABLE").length == 1)
+        return;
+      var ix = $(".ordner_tab tr.ui-state-highlight", "#TABLE").index() + 1;
+      $(".ordner_tab tr.ui-state-highlight", "#TABLE").remove();
+      if(ix > $(".ordner_tab tr", "#TABLE").length)
+        ix = $(".ordner_tab tr", "#TABLE").length;
+      $(".ordner_tab tr:nth-child("+ix+") input[type=text]", "#TABLE").focus();      
+      break;
+    case "UP":
+      var e = $(".ordner_tab tr.ui-state-highlight", "#TABLE");
+      e.prev().before(e);
+      break;
+    case "DN":
+      var e = $(".ordner_tab tr.ui-state-highlight", "#TABLE");
+      e.next().after(e);
+      break;      
+    default:
+      console.log(c, this);
+  }
+}
+// #####################################################################
+</script>
+<div id="id_Project" tabindex="1" style="display:none">
+  <form id="id_Project_Form" style="display:block" class="mk-tables-form">
+    <input type="submit" tabindex="-1" style="position:absolute; top:-1000px;display:none">
+    <input name="val" data-default=" {}" class="upd" type="hidden">
+    <table id="id_Project_Table" tabindex="2">
+      <tbody>
+        <tr>
+          <td class="ui-widget-content ui-state-disabled" style="width:1%">
+            <input name="id" style="width:4em;text-align:center;background:transparent" type="text" disabled>
+          </td>
+          <td class="ui-widget-content ui-state-disabled" style="width:1%">
+            <input name="admin" style="width:20em;text-align:center;background:transparent" class="upd" type="text" disabled>
+          </td>
+          <td class="ui-widget-header"></td>
+        </tr>
+      </tbody>
+    </table>
+    <table tabindex="3" class="Admin">
+      <tbody>
+        <tr>
+          <td class="ui-widget-header Admin" style="width:1%">Status</td>
+          <td class="ui-widget-content Admin" style="width:1%;padding:0">
+            <input data-enum='["X","-"]' type="button" name="state" class="enum upd" style="width:7em;background-color:transparent">
+          </td>
+          <td class="ui-widget-header" style="width:1%">Start</td>
+          <td class="ui-widget-content" style="width:1%">
+            <input type="text" name="start" class="datepicker upd" style="text-align:center;width:7em">
+          </td>
+          <td class="ui-widget-header"></td>
+        <tr>
+        </tr>
+          <td class="ui-widget-header">Preis</td>
+          <td class="ui-widget-content">
+            <input type="text" name="price" data-default="0.0" class="upd" style="text-align:right;">
+          </td>
+          <td class="ui-widget-header">Zugriff</td>
+          <td class="ui-widget-content">
+            <input type="text" name="access" class="datepicker upd" style="text-align:center;width:7em">
+          </td>
+          <td class="ui-widget-header"></td>
+        <tr>
+        </tr>
+          <td class="ui-widget-header">KundenID</td>
+          <td class="ui-widget-content">
+            <input type="text" name="kid" data-default="0" class="upd" style="text-align:center;">
+          </td>
+          <td class="ui-widget-header">Rechnung</td>
+          <td class="ui-widget-content">
+            <input type="text" name="bill" class="datepicker upd" style="text-align:center;width:7em">
+          </td>
+          <td class="ui-widget-header"></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <table tabindex="3">
+      <tbody>
+        <tr>
+          <td class="ui-widget-header" style="width:1%">Projekt</td>
+          <td class="ui-widget-content" style="width:49%">
+            <input type="text" name="project" class="upd">
+          </td>
+          <td class="ui-widget-header" style="width:1%">Repro</td>
+          <td class="ui-widget-content">
+            <input type="text" name="repro" class="autocomplete upd">
+          </td>
+        </tr>
+        <tr>
+          <td class="ui-widget-header" style="vertical-align:top">Bezeichnung</td>
+          <td class="ui-widget-content" colspan="3">
+            <input type="text" name="term" class="upd">
+          </td>
+        </tr>
+        <tr>
+          <td class="ui-widget-header" style="vertical-align:top">Beschreibung</td>
+          <td class="ui-widget-content" colspan="3" style="height:5em">
+            <textarea name="note" class="upd"></textarea>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="float:right;padding:6px">
+      <button title="Schema" data-choice="SCHEMA" class="ui-state-disabled" disabled>Schema</button>
+      <button title="Planer" data-choice="PLANER" class="ui-state-disabled" disabled>Planer</button>
+      <button title="Doku" data-choice="DOKU" class="ui-state-disabled" disabled>Doku</button>
+      <button title="Optionen" data-choice="OPTIONEN" class="ui-state-disabled" disabled>Optionen</button>
+    </div>
+  </form>
+</div>
+
+<span class="dialog">
+  
+<div id="SCHEMA">
+  <table style="width:99%" class="ui-widget-content">
+    <tr>
+      <th style="width:1%">VAR</th>
+      <td class="ui-widget-content" style="padding:0">
+        <span class="v" contenteditable="true"></span>
+      </td>
+      <td rowspan="2" style="text-align:center">
+        <label for="id_Strict">Strict</label>
+        <input type="checkbox" name="s" class="ui-widget-content" id="id_Strict">
+        <label for="id_Alpha">Alphabetisch</label>
+        <input name="t" value="A" type="radio" class="ui-widget-content" id="id_Alpha">
+        <label for="id_Num">Numerisch</label>
+        <input name="t" value="N" type="radio" class="ui-widget-content" id="id_Num">
+      </td>
+    </tr>
+    <tr>
+      <th style="width:1%">FIX</th>
+      <td class="ui-widget-content" style="padding:0">
+        <span class="f" contenteditable="true"></span>
+      </td>
+    </tr>
+  </table>
+  <p style="white-space:pre">DATEINAME = PLANNUMMER + ZUSATZ + .EXT
+
+    PLANNUMMER = Plannummer wie im Plan, besteht aus einer Überlappung von variablem und fixem Teil.
+       Der Überhang vom variablen Teil über den fixen Teil wird nur als optional interpretiert.
+    ZUSATZ = beliebige Zeichenkette / zusätzliche Information
+    EXT = Dateierweiterung (plt, pdf, doc, ...)
+
+Kodierung
+
+    P - Planer (Art der Planung)
+    L - LPH (1-9)
+    N - Laufende Nummer
+    I - Planindex
+    B - Bauteil
+    G - Ebene (Geschoss)
+    A - Planart
+    J - Jahr
+    M - Monat
+    T - Tag</p>
+</div>
+
+<div id="TABLE">
+<table border="0" style="width:99%">
+  <tr>
+    <td class="c_proj_navig">
+      <button data-choice="UP"><i class="fa fa-arrow-up"></i></button>
+      <button data-choice="DN"><i class="fa fa-arrow-down"></i></button>
+      <button data-choice="DEL"><i class="fa fa-trash"></i></button>
+      <button data-choice="ADD"><i class="fa fa-plus"></i></button>
+    </td>
+    <td class="c_proj_help" rowspan="3" style="width:20em;vertical-align:top">
+      <span class="PLANER">
+        <p>
+        Hier werden die Planerordner definiert. Ein Planordner besteht aus einem Code (ein Zeichen),
+        aus einem Trennzeichen (-) und aus der Bezeichnung.
+        So definierte Ordner werden dann unter Planung erscheinen.
+        </p>
+        <p>
+          <b>Bemerkung:</b> Die Zeichen "/" (Slash) und "!" sind nicht erlaubt!
+        </p>
+        <p>
+          <b>Bemerkung:</b> Nach jeder Änderung ist es notwendig in /Admin/Gruppe des Projekts die Zugriffsrechte
+            für jeder Gruppe zurückzusetzen und neu anzupassen!
+        </p>
+      </span>
+      <span class="DOKU">
+        <p>
+        Hier werden die Dokumentationsordner definiert. Ein Dokumentationsordner besteht aus einem Code (zwei Zeichen),
+        aus einem Trennzeichen (-) und aus der Bezeichnung.
+        So definierte Ordner werden dann unter Dokumentation erscheinen.
+        </p>
+        <p>
+          <b>Bemerkung:</b> Die Zeichen "/" (Slash) und "!" sind nicht erlaubt!
+        </p>
+        <p>
+          <b>Bemerkung:</b> Nach jeder Änderung ist es notwendig in /Admin/Gruppe des Projekts die Zugriffsrechte
+            für jeder Gruppe zurückzusetzen und neu anzupassen!
+        </p>
+      </span>
+      <span class="OPT">
+        <p>
+        Hier werden die Auswahlmöglichkeiten (Optionene) für Bauteil (B), Ebene (G) und Planart (P),
+        die unter Planung definiert. Es wird auch bestimmt,
+        unter welchem Planer die Optionen erscheinen.
+        </p>
+        <p>
+        Der zu jeder Auswahl zugehörige Code wird für die automatische Erkennung
+        der Daten aus dem Dateinamen bei hochladen der Daten benötigt.
+        </p>
+        <p>
+        Die Angaben in Optionen und Planer sind durch ein Komma "," zu trennen.
+        </p>
+      </span>
+    </td>
+  </tr>
+  <tr>
+    <td class="c_proj_header"></td>
+  </tr>
+  <tr>
+    <td class="c_proj_tab">
+      <div style="height:20em;overflow:auto;overflow-x:hidden">
+        <table class="ordner_tab"></table>
+      </div>
+    </td>
+  </tr>
+</table>
+</div>
+
+</span>
+

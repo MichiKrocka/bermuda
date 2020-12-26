@@ -1,0 +1,690 @@
+<style type="text/css">
+<!--
+#id_Docu {
+  width:100%;
+  height:auto;
+  overflow:auto;
+}
+#id_Docu .mk-content-right,
+#id_Docu .mk-search,
+#id_Docu .mk-header {
+  border:0;
+}
+#id_Docu .mk-footer {
+  border-right-width:0;
+  border-bottom-width:0;
+}
+#id_Docu_Form  i {
+  border:0;
+}
+table.c_upload,
+table.c_plot {
+  border-collapse:collapse;
+}
+#id_drop {
+  cursor:pointer;
+}
+.ui-autocomplete {
+  max-height: 70px;
+  height: 70px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: absolute;
+  cursor: default;
+  z-index:1000 !important;
+}
+-->
+</style>
+<script language="JavaScript" type="text/javascript">
+// #####################################################################
+var type = "";
+jQuery(function($){
+  // -------------------------------------------------------------------
+  var $T = null,
+      slfMenuFile = oPrjUser.menu;
+  // -------------------------------------------------------------------
+  make();
+  // -------------------------------------------------------------------
+  function selectMenu(ui){
+    var oldMenuFile  = $(ui.oldMenu).data("menu"),
+        newMenuFile  = $(ui.newMenu).data("menu");
+
+    if(DEBUG > 0 && newMenuFile != slfMenuFile){
+      var div_menu = $("#id_Content>div").filter('[data-menu="'+oldMenuFile+'"]');
+      $.Topic("selectMenu").unsubscribe(selectMenu);
+      $.Topic("logout").unsubscribe(saveOption);
+      if($T)
+        $T.tables("destroy");
+      div_menu.detach();
+      return
+    }
+
+    if(newMenuFile == slfMenuFile){
+      goTo();
+      $.Topic("logout").subscribe(saveOption);
+      if($T)
+        $T
+        .tables("refresh")
+        .focus();
+    } else if(oldMenuFile == slfMenuFile){
+      saveOption();
+      $.Topic("logout").unsubscribe(saveOption);
+    }
+  }
+  // -------------------------------------------------------------------
+  function saveOption(){
+    if($T)
+      $T.tables("saveOption").focus();
+  }
+  // -------------------------------------------------------------------
+  function make(){
+    var filtFix = "";
+    if(slfMenuFile != "20_Documentation.htm"){
+      type = slfMenuFile.substr(6).replace(/-.*$/g, "");
+      filtFix = "type='"+type+"'";
+    }
+    if(typeof oPrjAccess[slfMenuFile].vie != "undefined" && !oPrjAccess[slfMenuFile].vie)
+      $("#id_Plan").hide();
+    else {
+      $T = $("#id_Docu").tables({
+        colModel: [{
+          indx:   "id",
+          title:  "ID",
+          show:    true,
+          search:  true,
+          align:  "right",
+          width:  "3em"
+        },{
+          indx:   "stmp",
+          title:  "Stamp",
+          show:    true,
+          search:  true,
+          align:  "left",
+          width:  "10em"
+        },{
+          indx:   "type",
+          title:  "T",
+          show:    true,
+          search:  true,
+          align:  "left",
+          width:  "1.5em"
+        },{
+          indx:   "autor",
+          title:  "Autor",
+          show:    true,
+          search:  true,
+          align:  "left",
+          width:  "5em"
+        },{
+          indx:   "name",
+          title:  "Name",
+          show:    true,
+          search:  true,
+          align:  "left",
+          width:  "20em"
+        },{
+          indx:   "stop",
+          title:  "Lock",
+          show:    true,
+          search:  true,
+          align:  "center",
+          width:  "5em"
+        },{
+          indx:   "note",
+          title:  "Note",
+          show:    true,
+          search:  true,
+          align:  "left",
+          width:  "20em"
+        }],
+        accessModel: $.extend({}, oPrjAccess[slfMenuFile], {ins:false}),
+        dataModel:   $.extend({}, mysqlDataModel),
+  /*
+        autoOpt:   {
+          source: function(request, response){
+            var o = {
+              id: REST_ID,
+              base: SQL_PRJ_BASE,
+              cmd:  [{
+                sgn:   "GRP",
+                query: "SELECT grp AS value FROM sys_grp WHERE grp RLIKE ?",
+                para: [request.term]
+              }]
+            };
+            $.post("/sql", o, function(D){
+              if(D.GRP.length)
+                response(D.GRP);
+              else
+                response([]);
+            });
+          },
+          select: function(ev, ui){
+            //console.log("select auto", ui);
+          },
+          change: function(ev, ui){
+            //console.log("change auto", ui);
+          }
+        },
+  */
+        alignTitle: "center",
+        Left:       4,
+        Header:     null,
+        Footer:     null,
+        Icons:      '<button data-choice="PLOT" title="Reproservice"><i class="fa fa-print"></i></button>'+
+                    '<button data-choice="DN" title="Download"><i class="fa fa-download"></i></button>'+
+                    ((slfMenuFile == "20_Documentation.htm" || oPrjAccess[slfMenuFile].ins == false) ?
+                     '' :
+                     '<button data-choice="UP" title="Upload"><i class="fa fa-upload"></i></button>'
+                    ),
+        ID:         "id",
+        orderBy:    "id",
+        orderType:  "DESC",
+        recId:      0,
+
+        User:       oUser.dbuser, // dbuser
+        Sign:       slfMenuFile,  // navig identification
+
+        SQL_SysBase:  SQL_PRJ_BASE,
+        SQL_SysTable: SQL_PRJ_TABLE,
+        SQL_Base:     SQL_PRJ_BASE,
+        SQL_Table:    "docu",
+        SQL_Query:    "SELECT * FROM docu",
+        filtFix:      filtFix,
+        
+        // functions + events
+        i18n: _,
+        beforeEdit: function(ev, ui){
+          $("button", ui.form).button("enable");
+        },
+        closeEdit: function(ev, ui){
+          $("button", ui.form).button("disable");
+        },
+        refreshRec: function(ev, ui, callBack){
+          if(ui.REC.length == 0){
+            $("#id_DocPreview").hide();
+            $("a", "#id_Docu_Form").hide();
+            return;
+          }
+          // link
+          if(ui.REC[0].public == "X" && ui.REC[0].stop == ""){
+            var href = $.sprintf("%spublic.htm#%i/docu/%i",
+                                  window.location, oPrj.id, ui.REC[0].id);
+            $("a", "#id_Docu_Form")
+            .show()
+            .prop("href", href);
+          } else
+            $("a", "#id_Docu_Form")
+            .hide();
+          // preview
+          var Path = $.sprintf(
+                "bermuda/%s/doku/%06i.0.jpg",
+                SQL_PRJ_BASE, ui.REC[0].id
+              );
+          var url = "/loa?"+$.param({
+              id:  REST_ID,
+              path: Path
+            });
+            $("#id_DocPreview")
+            .show()
+            .attr("src", url+"#"+Math.random());
+        },
+        build: goTo,
+        clickButton: function(ev, ui){
+          switch(ui.choice){
+            case "DN": // ------------------------------------------------
+              if(ui.data.length == 0){
+                popup_message("Keine Dateien?");
+                return;
+              }
+              var log_note = [];
+              menu(ui, function(data){
+                if(data.length == 1){   // only 1 file ...................
+                  var Path = $.sprintf(
+                    "bermuda/%s/doku/%06i.%s",
+                    SQL_PRJ_BASE, data[0].id, data[0].name.replace(/^.*[.]/g, "")
+                  );
+                  submit_post_via_hidden_form("/loa", {
+                    id:  REST_ID,
+                    path: Path,
+                    name: data[0].name
+                  });
+                  log_note.push($.sprintf(
+                    "%i %s", data[0].id, data[0].name
+                  ));
+                } else if(data.length){ // zip ...........................
+                  var files = [];
+                  for(var i in data){
+                    files.push($.sprintf(
+                      "bermuda/%s/doku/%06i.%s",
+                      SQL_PRJ_BASE, data[i].id, data[i].name.replace(/^.*[.]/g, "")
+                    ));
+                    log_note.push($.sprintf(
+                      "%i %s", data[i].id, data[i].name
+                    ));
+                  }
+                  submit_post_via_hidden_form("/zip", {
+                    id:  REST_ID,
+                    files: JSON.stringify(files)
+                  });
+                } else {
+                  popup_message("Keine ausgewählte Datei darf geladen werden!", null, null, 3000)
+                  return;
+                }
+                log(oUser.dbuser, oPrj.project, "DOWNLOAD",
+                  $.sprintf("docu / %s\n%s", type, log_note.join("\n"))
+                ); 
+              });
+              break;
+            case "UP": // ------------------------------------------------
+              docu_upload(ui);
+              break;
+            case "PLOT": // ----------------------------------------------
+              if(ui.data.length == 0)
+                return;
+              menu(ui, function(data){
+                plot(data, "docu");
+              });
+              break;
+            default:
+              console.log(ui.choice);
+              break;
+          }
+        }
+      });
+      setTimeout(function(){
+        $T.focus();
+      }, 1000);
+    }
+    $.Topic("selectMenu").subscribe(selectMenu);
+    $.Topic("logout").subscribe(saveOption);
+  }
+  // -------------------------------------------------------------------
+  function goTo(){
+    change_all_lang($T);
+    //console.log(val);
+    // .................................................................
+    var opt = [];
+    for(var i in oPrj.val.doku)
+      opt.push($.sprintf(
+        '<option value="%s">%s</option>',
+        oPrj.val.doku[i].replace(/-.*$/g, ""),
+        oPrj.val.doku[i]
+      ));
+    $("select[name=type]", "#id_Docu_Form")
+    .html(opt.join(""));
+    if(type != "")
+      $("select[name=type]", "#id_Docu_Form")
+      .prop("disabled", true);
+    // .................................................................
+    $("i", "#id_Docu_Form")
+    .hover(function(ev){
+      $(this).addClass("ui-state-active");
+    }, function(ev){
+      $(this).removeClass("ui-state-active");
+    })
+    .click(function(ev){
+      var c = $(this).data("choice");
+      if(c == "lock"){
+        if($("#id_Docu_Form", "#id_Docu").length){
+          $("button[data-choice=EDIT]", $T).click();
+          return;
+        }
+        var v = $("input[name=stop]", "#id_Docu_Form").val();
+        if(v == oUser.dbuser)
+          $("input[name=stop]", "#id_Docu_Form").val("");
+        else if(v == "")
+          $("input[name=stop]", "#id_Docu_Form").val(oUser.dbuser);
+        return;
+      }
+      var v = $("input[name="+c+"]", "#id_Docu_Form").val();
+      if(v != ""){
+        var W = window.open("mailto:"+v, "MAIL");
+        W.close();
+      }
+    });
+  }
+  // -------------------------------------------------------------------
+});
+// #####################################################################
+function docu_upload(ui){
+  var $dialog = $('<div>'),
+      mail = [],
+      logs = [];
+  var o = {
+    id: REST_ID,
+    base: SQL_PRJ_BASE,
+    cmd:  [{
+      sgn:   "USER",
+      query: "SELECT dbuser,grp FROM sys_user ORDER BY dbuser",
+      para: []
+    },{
+      sgn:   "GRP",
+      query: "SELECT grp FROM sys_grp ORDER BY grp",
+      para: []
+    }]
+  };
+  $.post("/sql", o, function(D){
+    var opt = [
+      '<input type="checkbox" id="all_0" class="ALL">'+
+      '<label for="all_0">Alle</label>'
+    ];
+    for(var i in D.USER){
+      opt.push($.sprintf(
+        '<input type="checkbox" id="user_%i" value="%s" class="USER %s">'+
+        '<label for="user_%i">%s</label>',
+        i, D.USER[i].dbuser, D.USER[i].grp,
+        i, D.USER[i].dbuser
+      ));
+    }
+    for(var i in D.GRP){
+      opt.push($.sprintf(
+        '<input type="checkbox" id="grp_%i" value="%s" class="GRP">'+
+        '<label for="grp_%i">Gruppe %s</label>',
+        i, D.GRP[i].grp,
+        i, D.GRP[i].grp
+      ));
+    }
+    $dialog
+    .html(
+'<table class="c_upload" style="width:55em">\
+  <tr>\
+    <th style="width:40%">Sofort Benachrichtigung</th>\
+    <th style="width:60%">Benachrichtigungstext / optional</th>\
+  </tr>\
+  <tr>\
+    <td style="white-space:nowrap">\
+      <div style="height:10em;width:100%;overflow:auto;overflow-x:hidden" class="ui-widget-content">\
+        <div class="c_user_grp">'+opt.join('<br>')+'</div>\
+      </div>\
+    </td>\
+    <td><textarea name="txt" style="height:10em;width:100%" class="ui-widget-content"></textarea></td>\
+  </tr>\
+  <tr>\
+    <td colspan="2">\
+      <b>Drag and Drop eine oder mehrere Dateien oder Click für eine Auswahl von Dateien</b>\
+      <div id="id_drop" style="height:20em;width:100%;overflow:auto" class="ui-widget-content">\
+        <ul id="id_list" class="fa-ul"></ul>\
+      </div>\
+    </td>\
+  </tr>\
+</table>\
+<input id="id_multi" type="file" multiple style="display:none">'
+    );
+    // -----------------------------------------------------------------
+    $("input.GRP", $dialog).change(function(ev){
+      $("input."+this.value, $dialog).prop("checked", this.checked);
+    });
+    $("input.ALL", $dialog).change(function(ev){
+      $("input", $dialog).prop("checked", this.checked);
+    });
+    // -----------------------------------------------------------------
+    $("#id_drop", $dialog)
+    .bind("dragenter dragover", function(ev) {
+      $(this).addClass("hover");
+      return false;
+    })
+    .bind("dragleave", function(ev) {
+      $(this).removeClass("hover");
+      return false;
+    })
+    .bind("drop", function(ev) {
+      $(this).removeClass("hover");
+      var files = ev.originalEvent.dataTransfer.files;
+      for(var i = 0,I = files.length;i < I;i++){
+        load(files[i]);
+      }
+      return false;
+    })
+    .bind("click", function(ev) {
+      $("#id_multi", $dialog).click();
+    });
+    $("#id_multi", $dialog)
+    .bind("change", function(ev) {
+      var files = this.files;
+      for(var i = 0,I = files.length;i < I;i++){
+        load(files[i]);
+      }
+    });
+    // -----------------------------------------------------------------
+    $dialog
+    .dialog({
+      width: "auto",
+      title: "Upload",
+      modal: true,
+      closeOnEscape: false,
+      resizable: false,
+      buttons: [{
+        text: _("Send"),
+        class: "c_OK",
+        click: function(){
+          var self = this,
+              adr = [];
+          $("input.USER:checked", $dialog).each(function(){
+            adr.push(this.value);
+          });
+          // keine Dateien oder keine Empfänger
+          if(mail.length == 0 || adr.length == 0){
+            $dialog.dialog("close");
+            return;
+          }
+          // Nachrichttext
+          var $p = popup_message(
+            "<p>Bitte warten!</p><p>Nachricht wird gesendet...</p>",
+            "", null, 3000);
+            
+          if($("textarea[name=txt]", $dialog).val() != "")
+            mail.unshift($("textarea[name=txt]", $dialog).val()+"\n");
+          mail.unshift(
+            "Der Benutzer "+oUser.dbuser+" hat die folgenden Dokumente "+
+            "auf die Plattform <a href='"+location.origin+"'>BERMUDA</a> "+
+            "hochgeladen und möchte, "+
+            "dass Sie darüber informiert werden:\n");
+          $.post("/eml", {
+            id:      REST_ID,
+            text:    '<pre>'+mail.join("\n")+'</pre>',
+            to:      adr.join(","),
+            from:    oUser.dbuser,
+            subject: "BERMUDA Upload/Dokumentation - "+oPrj.project
+          }, function(D){
+            $p.dialog("close");
+            popup_message(D, "", null, D == "OK" ? 2000 : 10000);
+            $dialog.dialog("close");
+          }, "text") // eml
+          .fail(function(err){
+            $p.dialog("close");
+            console.log(err.responseText);
+            $dialog.dialog("close");
+          });
+        }
+      },{
+        text: _("Cancel"),
+        click: function(){
+          $(this).dialog("close");
+        }
+      }],
+      open: function(ev, ui){
+      },
+      close: function(ev, ui ){
+        $(this)
+        .off()
+        .dialog("destroy");
+        if(logs.length)
+          log(oUser.dbuser, oPrj.project, "UPLOAD",
+            $.sprintf("docu / %s\n%s", type, logs.join("\n"))
+          ); 
+      }
+    }).on("keydown", function(ev){
+      if(ev.keyCode == $.ui.keyCode.ENTER && ev.ctrlKey){
+        var OK = $("button.c_OK", $(this).dialog("widget"));
+        OK.click();
+      } else if(ev.keyCode == $.ui.keyCode.ESCAPE){
+        $(this).dialog("close");
+      }
+      return;
+    });
+  })
+  .fail(function(err){
+    console.log(err.responseText);
+  });
+  // -------------------------------------------------------------------
+  function load(f){
+    var li = $(
+      '<li>'+
+        '<i class="fa-li fa fa-spinner fa-spin"></i>'+
+        '<div class="pr" style="width:20%;height:1.2em;display:inline-block"></div>'+
+        '<div style="vertical-align:top;margin-left:5px;display:inline-block">'+f.name+'</div>'+
+      '</li>'
+    ).appendTo("ul#id_list", $dialog);
+    $("div.pr", li).progressbar({
+      value: 0
+    });
+    $("ul#id_list").parent().scrollTop(1000);
+    // reader
+    var reader = new FileReader();
+    reader.onload = (function(theFile) {
+      return function(e) {
+        var o = {
+          id: REST_ID,
+          base: SQL_PRJ_BASE,
+          cmd:  [{
+            sgn:   "INS",
+            query: "INSERT INTO docu (autor,name,type) VALUES (?,?,?)",
+            para: [oUser.dbuser, f.name, type]
+          }]
+        };
+        // SQL-INSERT => id
+        $.post("/sql", o, function(D){
+          var Form = new FormData();
+          Form.append("file", f);
+          Form.append("id", REST_ID);
+          Form.append("path", $.sprintf(
+              "bermuda/%s/doku/%06i.%s",
+              SQL_PRJ_BASE, D.INS.lastID, f.name.replace(/^.*[.]/g, "")
+          ));
+          Form.append("preview", 1);
+          mail.push($.sprintf(
+            "%2i %3i %-10s %s",
+            mail.length + 1, D.INS.lastID, type, f.name
+          ));
+          // upload
+          $.ajax({
+            url: '/sto',
+            data: Form,
+            dataType: 'text',
+            processData: false,
+            contentType: false,
+            type: 'POST',
+            xhr: function()
+            {
+              var xhr = new window.XMLHttpRequest();
+              // Upload progress
+              xhr.upload.addEventListener("progress", function(evt){
+                if (evt.lengthComputable) {
+                  var percentComplete = parseInt(evt.loaded / evt.total * 100);
+                  $("div.pr", li).progressbar("value", percentComplete);
+                }
+              }, false);
+              // Download progress
+/*
+              xhr.addEventListener("progress", function(evt){
+                if (evt.lengthComputable) {
+                  var percentComplete = evt.loaded / evt.total;
+                  //Do something with download progress
+                  console.log("?", percentComplete);
+                }
+              }, false);
+*/
+              return xhr;
+            },
+            success: function(data){
+              if(window.upload_time){
+                clearTimeout(window.upload_time);
+                window.upload_time = false;
+              }
+              window.upload_time = setTimeout(function(){
+                ui.element.element.tables("option", "recId", D.INS.lastID);
+                $("button[data-choice=REFRESH]", ui.element.element).click();
+                window.upload_time = false;
+              }, 1000);
+              $("i", li)
+              .removeClass("fa-spin fa-spinner")
+              .addClass("fa-check");
+              logs.push(D.INS.lastID+" "+f.name);
+            }
+          });
+        });
+      };
+    })(f);
+    reader.readAsBinaryString(f);
+  }
+}
+// #####################################################################
+</script>
+<div id="id_Docu" tabindex="1" style="display:none" class="ui-corner-top">
+  <form id="id_Docu_Form" style="display:block" class="mk-tables-form">
+    <input type="submit" tabindex="-1" style="position:absolute;top:-1000px;display:none">
+    <table id="id_Docu_Table" tabindex="2">
+      <tbody>
+        <tr>
+          <td class="ui-widget-content ui-state-disabled" style="width:1%">
+            <input name="id" style="width:4em;text-align:center;background:transparent" type="text" disabled>
+          </td>
+          <td class="ui-widget-content ui-state-disabled" style="width:1%">
+            <input name="stmp" style="width:10em;text-align:center;background:transparent" type="text" disabled>
+          </td>
+          <td class="ui-widget-header"></td>
+          <td class="ui-widget-header" style="width:1%;white-space:nowrap">
+            Autor&nbsp;
+            <i class="fa fa-envelope-o" data-choice="autor"></i>
+            &nbsp;
+          </td>
+          <td class="ui-widget-content ui-state-disabled" style="width:1%">
+            <input name="autor" style="width:15em;text-align:center;background:transparent" class="upd" type="text" disabled>
+          </td>
+          <td class="ui-widget-header" style="width:1%;white-space:nowrap">
+            Sperre&nbsp;
+            <i class="fa fa-envelope-o" data-choice="stop"></i>
+            &nbsp;
+            <i class="fa fa-lock" data-choice="lock"></i>
+            &nbsp;
+          </td>
+          <td class="ui-widget-content ui-state-disabled" style="width:1%">
+            <input name="stop" style="width:15em;text-align:center;background:transparent" type="text" class="upd" disabled>
+          </td>
+          <td class="ui-widget-content" style="width:1%;padding:0">
+            <input data-enum='["-","X"]' type="button" title="Publizieren" name="public" class="enum upd" style="width:2em;background-color:transparent">
+          </td>
+        </tr>
+        <tr>
+          <td class="ui-widget-header lang">Name</td>
+          <td class="ui-widget-content" colspan="7">
+            <input type="text" name="name" class="upd">
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <table tabindex="3" style="width:100%">
+      <tbody>
+        <tr>
+          <td class="ui-widget-header lang" style="width:40%;text-align:left">Note</td>
+          <td class="ui-widget-header" style="text-align:left">Vorschau</td>
+        </tr>
+        <tr>
+          <td class="ui-widget-content" style="height:20em">
+            <textarea name="note" class="upd"></textarea>
+          </td>
+          <td class="ui-widget-content">
+            <img id="id_DocPreview" alt="Keine Vorschau!" style="height:20em;overflow:auto" class="zoom">
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="float:left;padding:6px">
+      Typ
+      <select name="type" style="" class="ui-widget-content"></select>
+      &nbsp;
+      <a href="" target="_blank">Öffentlicher Link</a>
+    </div>
+  </form>
+</div>

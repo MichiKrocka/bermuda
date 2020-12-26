@@ -1,0 +1,76 @@
+<style type="text/css">
+<!--
+#id_adm_div{
+  border-top-width:0;
+  border-left-width:0;
+  border-right-width:0;
+  padding:0.5em;
+}
+-->
+</style>
+<div class="ui-widget ui-widget-header ui-corner-top" id="id_adm_div">
+  Projekt abhängige <span class="lang">Options</span>
+</div>
+<div id="id_data" style="margin:5px">
+  <label for="id_advice" class="lang" style="font-weight:bold">Advice</label>
+  <br>
+  <select name="advice" id="id_advice">
+    <option value="">keine</option>
+    <option value="S">jede Stunde</option>
+    <option value="T">jeden Tag</option>
+    <option value="W">jede Woche</option>
+  </select>
+  <br><br>
+  <span style="font-weight:bold">Name und Adresse</span>
+  <br>
+  <textarea name="adr" class="ui-widget-content" style="width:50%;height:10em"></textarea>
+  <br><br>
+  <button class="lang-title" data-choice="SAVE" title="Save">
+    <span class="lang">Save</span>
+  </button>
+</div>
+<script language="JavaScript" type="text/javascript">
+// #####################################################################
+jQuery(function($){
+  if(!oPrjAccess[oPrjUser.menu].acc)
+    return;
+  var slfMenuFile = oPrjUser.menu;
+  // -------------------------------------------------------------------
+  function selectMenu(ui){
+    var oldMenuFile  = $(ui.oldMenu).data("menu"),
+        newMenuFile  = $(ui.newMenu).data("menu");
+
+    if(DEBUG > 0 && newMenuFile != slfMenuFile){
+      var div_menu = $("#id_Content>div").filter('[data-menu="'+oldMenuFile+'"]');
+      $.Topic("selectMenu").unsubscribe(selectMenu);
+      div_menu.detach();
+      return
+    }
+  }
+  // -------------------------------------------------------------------
+  $.Topic("selectMenu").subscribe(selectMenu);
+  $("textarea[name=adr]", "#id_data").val(oPrjUser.adr);
+  // -------------------------------------------------------------------
+  $("#id_data button").button().click(function(ev){
+    var C = $(this).data("choice");
+    switch(C){
+      case "SAVE":
+        oPrjUser.adr    = $("textarea[name=adr]", "#id_data").val();
+        oPrjUser.advice = $("#id_advice").val();
+        break;
+      default:
+        console.log(C, this);
+    }
+  });
+  // -------------------------------------------------------------------
+  $("#id_advice").selectmenu({
+    select: function(ev, ui){
+      console.log(this, ui);
+    }
+  })
+  .val(oPrjUser.advice)
+  .selectmenu("refresh");
+  
+  // -------------------------------------------------------------------
+});
+</script>
