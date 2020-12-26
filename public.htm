@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html style="width:100%;height:100%;overflow:hidden">
+<head>
+  <meta http-equiv="X-UA-Compatible" content="IE=EDGE">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+  <meta charset="utf-8">
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=yes">
+  <title>BERMUDA</title>
+<script async type="text/javascript" src="/lib/js/fallback.min.js"></script>
+<script type="text/javascript">
+var oFallback = {
+  // js
+  'jQuery': [
+    'https://code.jquery.com/jquery-3.1.1.min.js',
+    '/lib/js/jquery.min.js'
+  ],
+  'submit_post_via_hidden_form': [
+    'js/submit.js'
+  ],
+  'jQuery.printf': [
+//    'http://www.bayern-surf.de/krocka/cdn/lib/js/jquery.printf.min.js',
+    '/lib/js/jquery.printf.min.js'
+  ]
+};
+// #####################################################################
+var BASE,
+    TABLE,
+    ID,
+    REPRO;
+// #####################################################################
+function load(){
+  if(location.href.substr(-1) == "#"){
+    for(var o in oFallback){
+      oFallback[o].reverse();
+    }
+  }
+  var E = document.getElementById("id_Cnt"),
+      i = 0,
+      T = setInterval(function(){
+        E.innerHTML = ++i;
+      }, 1000);
+  fallback.load(
+    oFallback,
+    {
+      shim: {
+      'jQuery.printf': ['jQuery','submit_post_via_hidden_form']
+      }
+    }
+  );
+  fallback.ready(function(){
+    clearInterval(T);
+    var hash  = window.location.hash.substr(1).split("/");
+    BASE  = $.sprintf("bermuda_%05i", hash[0]),
+    TABLE = hash[1],
+    ID    = hash[2];
+    switch(TABLE){
+      case "plot": // --------------------------------------------------
+        $.post("js/repro.json", function(data){
+          REPRO = data;
+          var o = {
+            id: "259e88811b229050b08679b67147b4ab",
+            base: BASE,
+            cmd: ([{
+              sgn: "PLOT",
+              query: "SELECT files,repro FROM plot WHERE id=?",
+              para: [ID]
+            }])
+          };
+          $.post("/sql", o, function(D){
+            if(D.PLOT.length == 0)
+              return;
+            submit_post_via_hidden_form("/zip", {
+              id:  "259e88811b229050b08679b67147b4ab",
+              files: JSON.stringify(D.PLOT[0].files.split("\n")),
+              pswd: REPRO[D.PLOT[0].repro].pswd
+            });
+            setTimeout(function(){
+              console.log(window);
+              window.top.close();
+            }, 1000);
+          }, "json")
+          .fail(function(err){
+            console.log(err.responseText);
+          });
+        });
+        break;
+      case "docu": // --------------------------------------------------
+        var o = {
+          id: "259e88811b229050b08679b67147b4ab",
+          base: BASE,
+          cmd: ([{
+            sgn: "DOCU",
+            query: "SELECT name FROM docu WHERE id=?",
+            para: [ID]
+          }])
+        };
+        $.post("/sql", o, function(D){
+          if(D.DOCU.length == 0)
+            return;
+          var Path = $.sprintf(
+            "bermuda/%s/doku/%06i.%s",
+            BASE, ID, D.DOCU[0].name.replace(/^.*[.]/g, "")
+          );
+          submit_post_via_hidden_form("/loa", {
+            id:  "259e88811b229050b08679b67147b4ab",
+            path: Path,
+            name: D.DOCU[0].name
+          });
+        })
+        .fail(function(err){
+          console.log(err.responseText);
+        });
+        break;
+      case "plan": // --------------------------------------------------
+        var o = {
+          id: "259e88811b229050b08679b67147b4ab",
+          base: BASE,
+          cmd: ([{
+            sgn: "PLAN",
+            query: "SELECT name FROM plan WHERE id=?",
+            para: [ID]
+          }])
+        };
+        $.post("/sql", o, function(D){
+          if(D.PLAN.length == 0)
+            return;
+          var Path = $.sprintf(
+            "bermuda/%s/plan/%06i.%s",
+            BASE, ID, D.PLAN[0].name.replace(/^.*[.]/g, "")
+          );
+          submit_post_via_hidden_form("/loa", {
+            id:  "259e88811b229050b08679b67147b4ab",
+            path: Path,
+            name: D.PLAN[0].name
+          });
+        })
+        .fail(function(err){
+          console.log(err.responseText);
+        });
+        break;
+      case "archiv": // ------------------------------------------------
+        var o = {
+          id: "259e88811b229050b08679b67147b4ab",
+          base: "bermuda",
+          cmd: ([{
+            sgn: "ARCHIV",
+            query: "SELECT project FROM project WHERE id=?",
+            para: [ID]
+          }])
+        };
+        $.post("/sql", o, function(D){
+          if(D.ARCHIV.length == 0)
+            return;
+          var Path = $.sprintf(
+            "bermuda/bermuda_%05d/%s.zip",
+            ID, D.ARCHIV[0].project.replace(/[ \r\n\t]+/g, "_")
+          );
+          submit_post_via_hidden_form("/loa", {
+            id:  "259e88811b229050b08679b67147b4ab",
+            path: Path,
+            name: D.ARCHIV[0].project+".zip"
+          });
+        })
+        .fail(function(err){
+          console.log(err.responseText);
+        });
+        break;
+    }
+  });
+}
+// #####################################################################
+</script>
+<body onload="load()" style="width:100%;height:100%">
+  <table style="width:100%;height:100%;font-size:5em">
+    <tr>
+      <td style="text-align:center;vertical-align:middle" id="id_Cnt">Download</td>
+    </tr>
+  </table>
+</body>
+</html>
