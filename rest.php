@@ -1,7 +1,7 @@
 <?php
   use PHPMailer\PHPMailer\PHPMailer;
   use PHPMailer\PHPMailer\Exception;
-  require '/var/www/vendor/autoload.php';
+  require '/usr/share/php/libphp-phpmailer/autoload.php';
 
 //file_put_contents("/tmp/sql2", var_export($_REQUEST, true).PHP_EOL, FILE_APPEND);
 //file_put_contents("/tmp/sql", var_export($_FILES, true).PHP_EOL, FILE_APPEND);
@@ -25,15 +25,15 @@ if(
 ?>
 <?php
 // #####################################################################
-define("DATA_PATH", "/var/www/data/");
-define("PREVIEW", "/var/www/data/bermuda/preview.sh");
+define("DATA_PATH", "/var/www/bermuda.goip.de/data/");
+define("PREVIEW", "/var/www/usr/preview.sh");
 // #####################################################################
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Cache-Control: post-check=0, pre-check=0", false);
 header("Pragma: no-cache");
 // #####################################################################
 //file_put_contents("/tmp/sql", "ALL: ".var_export($_REQUEST, true).PHP_EOL, FILE_APPEND);
-file_put_contents("/tmp/sql", "REST: ".$_REQUEST["rest"].PHP_EOL, FILE_APPEND);
+//file_put_contents("/tmp/sql", "REST: ".$_REQUEST["rest"].PHP_EOL, FILE_APPEND);
 switch($_REQUEST["rest"]){
   case "sql":
     Sql();
@@ -73,7 +73,7 @@ function Sql(){
   $PDO = new PDO(
     "mysql:host=localhost;dbname=".$P["base"].";charset=utf8",
     "krocka",
-    "krocka"
+    "miso62krocka"
   );
   $PDO->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
   $PDO->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
@@ -89,7 +89,7 @@ function Sql(){
     else
       $para = array();
     $cmd = $P["cmd"][$iA];
-file_put_contents("/tmp/sql", "SGN: ".var_export($cmd["sgn"], true).PHP_EOL."\n".var_export($cmd, true), FILE_APPEND);
+//file_put_contents("/tmp/sql", "SGN: ".var_export($cmd["sgn"], true).PHP_EOL."\n".var_export($cmd, true), FILE_APPEND);
     // .................................................................
     if($P["cmd"][$iA]["sgn"] == "ID2IX"){
       // Filter Records ................................................
@@ -300,6 +300,7 @@ function Loa(){
     $filename = $_REQUEST["name"];
   else
     $filename = basename($file);
+//file_put_contents("/tmp/sql", "END ".$file."\n".$_REQUEST["path"].PHP_EOL, FILE_APPEND);
   header('Content-Description: File Transfer');
   header('Content-Type: application/octet-stream');
   header('Content-Disposition: attachment; filename="'.$filename.'"');

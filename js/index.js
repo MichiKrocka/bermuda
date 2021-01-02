@@ -613,7 +613,7 @@ function login_init(){
 // main page
 function main_init(){
   // REPRO -------------------------------------------------------------
-  $.post("js/repro.json", function(data){
+  $.get("js/repro.json", function(data){
     REPRO = data;
   }, "json")
   .fail(function(err){

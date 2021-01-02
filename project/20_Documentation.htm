@@ -217,7 +217,7 @@ jQuery(function($){
             .hide();
           // preview
           var Path = $.sprintf(
-                "bermuda/%s/doku/%06i.0.jpg",
+                "%s/doku/%06i.0.jpg",
                 SQL_PRJ_BASE, ui.REC[0].id
               );
           var url = "/loa?"+$.param({
@@ -240,7 +240,7 @@ jQuery(function($){
               menu(ui, function(data){
                 if(data.length == 1){   // only 1 file ...................
                   var Path = $.sprintf(
-                    "bermuda/%s/doku/%06i.%s",
+                    "%s/doku/%06i.%s",
                     SQL_PRJ_BASE, data[0].id, data[0].name.replace(/^.*[.]/g, "")
                   );
                   submit_post_via_hidden_form("/loa", {
@@ -255,7 +255,7 @@ jQuery(function($){
                   var files = [];
                   for(var i in data){
                     files.push($.sprintf(
-                      "bermuda/%s/doku/%06i.%s",
+                      "%s/doku/%06i.%s",
                       SQL_PRJ_BASE, data[i].id, data[i].name.replace(/^.*[.]/g, "")
                     ));
                     log_note.push($.sprintf(
@@ -558,7 +558,7 @@ function docu_upload(ui){
           Form.append("file", f);
           Form.append("id", REST_ID);
           Form.append("path", $.sprintf(
-              "bermuda/%s/doku/%06i.%s",
+              "%s/doku/%06i.%s",
               SQL_PRJ_BASE, D.INS.lastID, f.name.replace(/^.*[.]/g, "")
           ));
           Form.append("preview", 1);
