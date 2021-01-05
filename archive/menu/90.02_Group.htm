@@ -1,0 +1,161 @@
+content["menu/90.02_Group.htm"] = `
+<!DOCTYPE html>
+<html>
+<style type="text/css">
+<!--
+#id_Grp {
+  width:100%;
+  height:auto;
+  overflow:auto;
+}
+#id_Grp .mk-content-right,
+#id_Grp .mk-search,
+#id_Grp .mk-header {
+  border:0;
+}
+#id_Grp .mk-footer {
+  border-right-width:0;
+  border-bottom-width:0;
+}
+-->
+</style>
+<script language="JavaScript" type="text/javascript">
+// #####################################################################
+jQuery(function($){
+  // -------------------------------------------------------------------
+  var $T,
+      slfMenuFile = newMenu;
+  // -------------------------------------------------------------------
+  make();
+  // -------------------------------------------------------------------
+  function selectMenu(ui){
+    var oldMenuFile  = $(ui.oldMenu).data("menu"),
+        newMenuFile  = $(ui.newMenu).data("menu");
+
+    if(DEBUG > 0 && newMenuFile != slfMenuFile){
+      var div_menu = $("#id_Content>div").filter('[data-menu="'+oldMenuFile+'"]');
+      $.Topic("selectMenu").unsubscribe(selectMenu);
+      $T.tables("destroy");
+      div_menu.detach();
+      return
+    }
+
+    if(newMenuFile == slfMenuFile){
+      goTo();
+      if(typeof $T != "undefined")
+        $T
+        .tables("refresh")
+        .focus();
+    } else if(oldMenuFile == slfMenuFile){
+    }
+  }
+  // -------------------------------------------------------------------
+  function make(){
+    $.Topic("selectMenu").subscribe(selectMenu);
+    $T = $("#id_Grp").tables({
+      colModel: [{
+        indx:   "grp",
+        title:  "Group",
+        show:    true,
+        search:  true,
+        align:  "left",
+        width:  "10em"
+      },{
+        indx:   "note",
+        title:  "Note",
+        show:    true,
+        search:  true,
+        align:  "left",
+        width:  "40em"
+      }],
+      accessModel: {
+        "edt": false,
+        "ins": false,
+        "del": false,
+        "rep": true        
+      },
+      dataModel:  $.extend(true, {}, jsonDataModel),
+      alignTitle: "center",
+      Left:       1,
+      Header:     null,
+      Footer:     null,
+      Icons:      '<button data-choice="USERS">'+_("Users")+'&hellip;</button>',
+      ID:         "id",
+      recId:      0,
+
+      User:       "", // dbuser
+      Sign:       slfMenuFile,  // navig identification
+
+      JSON_Data:  aSys_grp,
+      JSON_Sys:   aSys,//"json/sys.json",
+
+      // functions + events
+      i18n: _,
+      build: goTo,
+      clickButton: function(ev, ui){
+        switch(ui.choice){
+          case "USERS":
+            GOTO_PRJ_USERS_FILT = 'grp=="'+$("input[name=grp]", $T).val()+'"';
+            $("#id_Menu")
+            .tree("open", $("input[data-menu='90.01_User.htm']", "#id_Menu"));
+            break;
+          default:
+            console.log(ui.choice);
+            break;
+        }
+      }
+    });
+    setTimeout(function(){
+      $T.focus();
+    }, 1000);
+  }
+  // -------------------------------------------------------------------
+  function goTo(){
+    change_all_lang($T, true);
+    if(GOTO_PRJ_GROUP_FILT !== null){
+      setTimeout(function(){
+        $T.tables("option", {
+          filt: GOTO_PRJ_GROUP_FILT,
+          filtSw: true
+        });
+        $T.tables("refresh");
+        GOTO_PRJ_GROUP_FILT = null;
+      }, 100);
+    }
+  }
+  // -------------------------------------------------------------------
+  $("#id_Grp_Form").on("submit", function(ev){
+    return false;
+  });
+});
+// #####################################################################
+</script>
+<div id="id_Grp" tabindex="1" style="display:none">
+  <form id="id_Grp_Form" style="display:block" class="mk-tables-form">
+    <input type="hidden" name="access" class="upd">
+    <input type="submit" tabindex="-1" style="position:absolute; top:-1000px;display:none">
+    <table id="id_Grp_Table" tabindex="2">
+      <tbody>
+        <tr>
+          <td class="ui-widget-header lang">Group</td>
+          <td class="ui-widget-content"><input type="text" name="grp" style="width:20em" class="upd"></td>
+          <td class="ui-widget-header lang" style="width:90%;text-align:left">Note</td>
+          <td class="ui-widget-content ui-state-disabled" style="width:1%">
+            <input name="id" style="width:4em;text-align:center;background:transparent" type="text" disabled>
+          </td>
+        </tr>
+        <tr>
+          <td class="ui-widget-header" colspan="2"></td>
+          <td class="ui-widget-content" colspan="2">
+            <textarea name="note" style="min-height:5em" class="upd"></textarea>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="float:right;padding:6px">
+      <button title="Access rights" data-choice="ACCESS" class="lang lang-title" disabled>Access rights</button>
+    </div>
+  </form>
+</div>
+</html>
+`;

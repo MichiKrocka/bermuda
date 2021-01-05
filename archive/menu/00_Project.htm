@@ -1,0 +1,156 @@
+content["menu/00_Project.htm"] = `
+<!DOCTYPE html>
+<html>
+<style type="text/css">
+<!--
+#id_ProjectDiv{
+  border-top-width:0;
+  border-left-width:0;
+  border-right-width:0;
+  padding:0.5em;
+}
+#id_ProjectTab {
+  font-family:monospace;
+}
+#id_ProjectTab td {
+  vertical-align:top;
+  padding:1px;
+  white-space:pre;
+}
+#id_ProjectTab td:first-child {
+  font-weight:bold;
+  text-align:right;
+}
+#id_ProjectValTab {
+  font-family:monospace;
+  width:100%;
+  border-collapse: collapse;
+  border-left:0;
+  border-right:0;
+}
+#id_ProjectValTab th {
+  text-align:center;
+}
+#id_ProjectValTab td textarea {
+  width:100%;
+  height:15em;
+  border:0;
+  font-family:monospace;
+  white-space:pre;
+}
+
+-->
+</style>
+<div class="ui-widget ui-widget-header ui-corner-top" id="id_ProjectDiv">
+  Projektdaten
+</div>
+<table id="id_ProjectTab">
+  <tr>
+    <td class="lang">Project</td>
+    <td class="c_project" colspan="2"></td>
+  </tr>
+  <tr>
+    <td class="lang">Term</td>
+    <td class="c_term" colspan="2"></td>
+  </tr>
+  <tr>
+    <td class="lang">Note</td>
+    <td class="c_note" colspan="2"></td>
+  </tr>
+  <tr>
+    <td class="lang">Administrator</td>
+    <td class="c_admin" colspan="2"></td>
+  </tr>
+  <tr>
+    <td class="lang">Repro</td>
+    <td class="c_repro" colspan="2"></td>
+  </tr>
+  <tr>
+    <td class="lang">Start</td>
+    <td class="c_start" colspan="2"></td>
+  </tr>
+  <tr>
+    <td class="lang">Access</td>
+    <td class="c_access" colspan="2"></td>
+  </tr>
+  <tr class="c_schema">
+    <td class="lang">Schema</td>
+    <td>Var</td>
+    <td class="c_v"></td>
+  </tr>
+  <tr class="c_schema">
+    <td></td>
+    <td>Fix</td>
+    <td class="c_f"></td>
+  </tr>
+  <tr class="c_schema">
+    <td></td>
+    <td>Strikt</td>
+    <td class="c_s"></td>
+  </tr>
+  <tr class="c_schema">
+    <td></td>
+    <td>Index</td>
+    <td class="c_t"></td>
+  </tr>
+</table>
+<table id="id_ProjectValTab" class="ui-widget-content" style="width:100%">
+  <tr class="ui-widget-header">
+    <th class="lang">Documentation</th>
+    <th class="">Planner</th>
+    <th class="lang">Options</th>
+  </tr>
+  <tr>
+    <td style="width:25%">
+      <textarea class="c_doku" readonly></textarea>
+    </td>
+    <td style="width:30%">
+      <textarea class="c_planer" readonly></textarea>
+    </td>
+    <td>
+      <textarea class="c_opt" readonly></textarea>
+    </td>
+  </tr>
+</table>
+<script language="JavaScript" type="text/javascript">
+// #####################################################################
+jQuery(function($){
+  var slfMenuFile = newMenu;
+  // -------------------------------------------------------------------
+  function selectMenu(ui){
+    var oldMenuFile  = $(ui.oldMenu).data("menu"),
+        newMenuFile  = $(ui.newMenu).data("menu");
+
+    if(DEBUG > 0 && newMenuFile != slfMenuFile){
+      var div_menu = $("#id_Content>div").filter('[data-menu="'+oldMenuFile+'"]');
+      $.Topic("selectMenu").unsubscribe(selectMenu);
+      div_menu.detach();
+      return
+    }
+  }
+  // -------------------------------------------------------------------
+  $.Topic("selectMenu").subscribe(selectMenu);
+  // -------------------------------------------------------------------
+  for(var x in oPrj){
+    if(x == "val"){
+      for(var y in oPrj.val.schema){
+        $(".c_schema .c_"+y, "#id_ProjectTab").text(oPrj.val.schema[y]);
+      }
+      $(".c_doku", "#id_ProjectValTab").val(oPrj.val.doku.join("\\r"));
+      $(".c_planer", "#id_ProjectValTab").val(oPrj.val.planer.join("\\r"));
+      var opt = "";
+      for(var y in oPrj.val.opt){
+        opt += $.sprintf(
+          "%s\\r  %s\\r  %s\\r  %s\\r",
+          oPrj.val.opt[y].t,
+          oPrj.val.opt[y].a, oPrj.val.opt[y].c, oPrj.val.opt[y].p
+        );
+      }
+      $(".c_opt", "#id_ProjectValTab").val(opt);
+    } else
+      $(".c_"+x, "#id_ProjectTab").text(oPrj[x]);
+  }
+});
+</script>
+</html>
+`;

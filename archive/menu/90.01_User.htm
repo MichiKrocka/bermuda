@@ -1,0 +1,214 @@
+content["menu/90.01_User.htm"] = `
+<!DOCTYPE html>
+<html>
+<style type="text/css">
+<!--
+#id_Users {
+  width:100%;
+  height:auto;
+  overflow:auto;
+}
+#id_Users .mk-content-right,
+#id_Users .mk-search,
+#id_Users .mk-header {
+  border:0;
+}
+#id_Users .mk-footer {
+  border-right-width:0;
+  border-bottom-width:0;
+}
+-->
+</style>
+<script language="JavaScript" type="text/javascript">
+// #####################################################################
+jQuery(function($){
+  // -------------------------------------------------------------------
+  var $T,
+      slfMenuFile = newMenu;
+  // -------------------------------------------------------------------
+  make();
+  // -------------------------------------------------------------------
+  function selectMenu(ui){
+    var oldMenuFile  = $(ui.oldMenu).data("menu"),
+        newMenuFile  = $(ui.newMenu).data("menu");
+
+    if(DEBUG > 0 && newMenuFile != slfMenuFile){
+      var div_menu = $("#id_Content>div").filter('[data-menu="'+oldMenuFile+'"]');
+      $.Topic("selectMenu").unsubscribe(selectMenu);
+      $T.tables("destroy");
+      div_menu.detach();
+      return
+    }
+
+    if(newMenuFile == slfMenuFile){
+      goTo();
+      if(typeof $T != "undefined")
+        $T
+        .tables("refresh")
+        .focus();
+    } else if(oldMenuFile == slfMenuFile){
+    }
+  }
+  // -------------------------------------------------------------------
+  function make(){
+    $.Topic("selectMenu").subscribe(selectMenu);
+    $T = $("#id_Users").tables({
+      colModel: [{
+        indx:   "dbuser",
+        title:  "User",
+        show:    true,
+        search:  true,
+        align:  "left",
+        width:  "10em"
+      },{
+        indx:   "grp",
+        title:  "Group",
+        show:    true,
+        search:  true,
+        align:  "left",
+        width:  "8em"
+      },{
+        indx:   "lph",
+        title:  "LPH",
+        show:    true,
+        search:  true,
+        align:  "left",
+        width:  "7em"
+      },{
+        indx:   "advice",
+        title:  "Advice",
+        show:    true,
+        search:  true,
+        align:  "center",
+        width:  "3em"
+      },{
+        indx:   "note",
+        title:  "Note",
+        show:    true,
+        search:  true,
+        align:  "left",
+        width:  "40em"
+      }],
+      accessModel: {
+        "edt": false,
+        "ins": false,
+        "del": false,
+        "rep": true        
+      },
+      dataModel:  $.extend(true, {}, jsonDataModel),
+      alignTitle: "center",
+      Left:       2,
+      Rows:       5,
+      Header:     null,
+      Footer:     null,
+      Icons:      '<button data-choice="GROUP">'+_("Group")+'&hellip;</button>',
+      ID:         "id",
+      recId:      0,
+
+      User:       "", // dbuser
+      Sign:       slfMenuFile,  // navig identification
+
+      JSON_Data:  aSys_user,
+      JSON_Sys:   aSys,//"json/sys.json",
+
+      // functions + events
+      i18n: _,
+      beforeEdit: function(ev, ui){
+        $("button", ui.form).button("enable");
+      },
+      closeEdit: function(ev, ui){
+        $("button", ui.form).button("disable");
+      },
+      build: goTo,
+      clickButton: function(ev, ui){
+        switch(ui.choice){
+          case "GROUP":
+            GOTO_PRJ_GROUP_FILT = 'grp=="'+$("input[name=grp]", $T).val()+'"';
+            $("#id_Menu")
+            .tree("open", $("input[data-menu='90.02_Group.htm']", "#id_Menu"));
+            break;
+          default:
+            console.log(ui.choice);
+            break;
+        }
+      }
+    });
+    setTimeout(function(){
+      $T.focus();
+    }, 1000);
+  }
+  // -------------------------------------------------------------------
+  function goTo(){
+    change_all_lang($T, true);
+    if(GOTO_PRJ_USERS_FILT !== null){
+      setTimeout(function(){
+        $T.tables("option", {
+          filt: GOTO_PRJ_USERS_FILT,
+          filtSw: true
+        });
+        $T.tables("refresh");
+        GOTO_PRJ_USERS_FILT = null;
+      }, 100);
+    }
+  }
+  // -------------------------------------------------------------------
+});
+// #####################################################################
+</script>
+<div id="id_Users" tabindex="1" style="display:none" class="ui-corner-top">
+  <form id="id_Users_Form" style="display:block" class="mk-tables-form">
+    <input type="submit" tabindex="-1" style="position:absolute;top:-1000px;display:none">
+    <table id="id_Users_Table" tabindex="2">
+      <tbody>
+        <tr>
+          <td class="ui-widget-header lang">User</td>
+          <td class="ui-widget-content"><input type="text" name="dbuser" style="width:20em" class="upd"></td>
+          <td class="ui-widget-header lang" style="width:90%;text-align:left">Note</td>
+          <td class="ui-widget-content ui-state-disabled" style="width:1%">
+            <input name="id" style="width:4em;text-align:center;background:transparent" type="text" disabled>
+          </td>
+        </tr>
+        <tr>
+          <td class="ui-widget-header lang">Group</td>
+          <td class="ui-widget-content"><input type="text" name="grp" class="autocomplete upd"></td>
+          <td class="ui-widget-content" rowspan="3" colspan="2">
+            <textarea name="note" style="" class="upd"></textarea>
+          </td>
+        </tr>
+        <tr>
+          <td class="ui-widget-header">LPH</td>
+          <td class="ui-widget-content">
+            <input type="text" name="lph" class="upd">
+          </td>
+        </tr>
+        <tr>
+          <td class="ui-widget-header lang">Advice</td>
+          <td class="ui-widget-content">
+            <input type="text" name="advice" class="upd">
+          </td>
+        </tr>
+        <tr>
+          <td class="ui-widget-header lang" style="vertical-align:top">Address</td>
+          <td class="ui-widget-content" colspan="4" style="height:8em">
+            <textarea name="adr" class="upd"></textarea>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <p>
+    <b>LPH</b> - eine Liste mit "," getrennten Leistungsphasen (z.B.1,3,4,5,6,9) mit erlaubtem Zugriff.<br>
+    Eine leere Liste ermöglicht den Zugriff für alle LPH.
+    </p>
+    <p>
+    <b>Mitteilung</b> - steuert die Benachrichtigung bei neuen oder geänderten Daten:<br>
+    <ul>
+      <li>leer - keine Benachrichtigung</li>
+      <li>S - jede Stunde</li>
+      <li>T - jeden Tag</li>
+      <li>W - jede  Woche</li>
+    </ul>
+    </p>
+  </form>
+</div>
+</html>
+`;

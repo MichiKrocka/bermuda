@@ -1,0 +1,3 @@
+[AutoRun]
+open=ShelExec.exe index.html
+icon=favicon.ico,0

@@ -153,7 +153,7 @@ function load(){
           if(D.ARCHIV.length == 0)
             return;
           var Path = $.sprintf(
-            "bermuda/bermuda_%05d/%s.zip",
+            "bermuda_%05d/%s.zip",
             ID, D.ARCHIV[0].project.replace(/[ \r\n\t]+/g, "_")
           );
           submit_post_via_hidden_form("/loa", {

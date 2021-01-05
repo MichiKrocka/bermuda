@@ -1,0 +1,594 @@
+content["menu/10_Planning.htm"] = `
+<!DOCTYPE html>
+<html>
+<style type="text/css">
+<!--
+#id_Plan {
+  width:100%;
+  height:auto;
+  overflow:auto;
+}
+#id_Plan .mk-content-right,
+#id_Plan .mk-search,
+#id_Plan .mk-header {
+  border:0;
+}
+#id_Plan .mk-footer {
+  border-right-width:0;
+  border-bottom-width:0;
+}
+#id_Plan_Form i {
+  border:0;
+}
+#id_PlanPreview {
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  font-size:3em;
+  height:198px;
+  max-width:40em;
+  overflow:auto;
+}
+#id_Plan_Form input.c_txt {
+  display:none;
+}
+#id_Plan_Form input.c_val {
+}
+ul#id_list li {
+  margin-right:2px;
+}
+ul#id_list table {
+  border-collapse:collapse;
+}
+ul#id_list table td {
+  white-space:nowrap;
+  margin:0;
+  padding:1px;
+}
+ul#id_list table td  textarea,
+ul#id_list table td input[type=text] {
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  width:100%;
+  border:0;
+  margin:0;
+}
+
+table.c_upload,
+table.c_plot {
+  border-collapse:collapse;
+}
+#id_drop {
+  cursor:pointer;
+}
+.ui-autocomplete {
+  max-height: 70px;
+  height: 70px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: absolute;
+  cursor: default;
+  z-index:1000 !important;
+}
+-->
+</style>
+<script language="JavaScript" type="text/javascript">
+// #####################################################################
+var type = "",
+    oBEP = {};
+// #####################################################################
+jQuery(function($){
+  // -------------------------------------------------------------------
+  var $T,
+      slfMenuFile = newMenu;
+  // -------------------------------------------------------------------
+  make();
+  // -------------------------------------------------------------------
+  function selectMenu(ui){
+    var oldMenuFile  = $(ui.oldMenu).data("menu"),
+        newMenuFile  = $(ui.newMenu).data("menu");
+
+    if(DEBUG > 0 && newMenuFile != slfMenuFile){
+      var div_menu = $("#id_Content>div").filter('[data-menu="'+oldMenuFile+'"]');
+      $.Topic("selectMenu").unsubscribe(selectMenu);
+      $T.tables("destroy");
+      div_menu.detach();
+      return
+    }
+
+    if(newMenuFile == slfMenuFile){
+      goTo();
+      if(typeof $T != "undefined")
+        $T
+        .tables("refresh")
+        .focus();
+    } else if(oldMenuFile == slfMenuFile){
+    }
+  }
+  // -------------------------------------------------------------------
+  function make(){
+    var filtFix = "";
+    // alle Pläne ......................................................
+    if(slfMenuFile == "10_Planning.htm"){
+      $("input.c_txt", "#id_Plan_Form").hide();
+      $("input.c_val", "#id_Plan_Form").show();
+    // Planer ..........................................................
+    } else {
+      // type
+      type    = slfMenuFile.substr(6).replace(/-.*$/g, "");
+      filtFix = "type=='"+type+"'";
+      // Bauteil + Ebene + Planart
+      oBEP = {
+        bauteil: {},
+        ebene:   {},
+        planart: {}
+      };
+      var oX = {B:"bauteil", G:"ebene", P:"planart"};
+      for(var t in oPrj.val.opt){
+        var p = oPrj.val.opt[t].p.split(",");
+        if(p.indexOf(type) != -1){
+          if(typeof oBEP[oX[oPrj.val.opt[t].a]] == "undefined")
+            oBEP[oX[oPrj.val.opt[t].a]] = {};
+          oBEP[oX[oPrj.val.opt[t].a]][oPrj.val.opt[t].c] =
+            oPrj.val.opt[t].c+" "+oPrj.val.opt[t].t;
+        }
+      }
+      $("input.c_val", "#id_Plan_Form").hide();
+      $("input.c_txt", "#id_Plan_Form").show();
+    }
+    $.Topic("selectMenu").subscribe(selectMenu);
+    $T = $("#id_Plan").tables({
+      colModel: [{
+        indx:   "ID",
+        title:  "ID",
+        show:    true,
+        search:  true,
+        align:  "right",
+        width:  "3em"
+      },{
+        indx:   "stmp",
+        title:  "Stamp",
+        show:    true,
+        search:  true,
+        align:  "left",
+        width:  "10em"
+      },{
+        indx:   "type",
+        title:  "T",
+        show:    true,
+        search:  true,
+        align:  "center",
+        width:  "1.5em"
+      },{
+        indx:   "autor",
+        title:  "Autor",
+        show:    true,
+        search:  true,
+        align:  "left",
+        width:  "5em"
+      },{
+        indx:   "plnr",
+        title:  "Plannummer",
+        show:    true,
+        search:  true,
+        align:  "left",
+        width:  "13em"
+      },{
+        indx:   "name",
+        title:  "Name",
+        show:    false,
+        search:  true,
+        align:  "left",
+        width:  "10em"
+      },{
+        indx:   "lnr",
+        title:  "LNr",
+        show:    true,
+        search:  true,
+        align:  "center",
+        width:  "5em"
+      },{
+        indx:   "ix",
+        title:  "IX",
+        show:    true,
+        search:  true,
+        align:  "center",
+        width:  "1.5em"
+      },{
+        indx:   "bauteil",
+        title:  "Bauteil",
+        show:    true,
+        search:  true,
+        align:  "center",
+        width:  "3em"
+      },{
+        indx:   "ebene",
+        title:  "Ebene",
+        show:    true,
+        search:  true,
+        align:  "center",
+        width:  "3em"
+      },{
+        indx:   "planart",
+        title:  "Planart",
+        show:    true,
+        search:  true,
+        align:  "center",
+        width:  "3em"
+      },{
+        indx:   "pldatum",
+        title:  "Plandatum",
+        show:    true,
+        search:  true,
+        align:  "center",
+        width:  "6em"
+      },{
+        indx:   "stop",
+        title:  "Lock",
+        show:    true,
+        search:  true,
+        align:  "center",
+        width:  "3em"
+      },{
+        indx:   "zusatz",
+        title:  "Zusatz",
+        show:    true,
+        search:  true,
+        align:  "left",
+        width:  "10em"
+      },{
+        indx:   "note",
+        title:  "Note",
+        show:    false,
+        search:  true,
+        align:  "left",
+        width:  "20em"
+      }],
+      accessModel: {
+        "edt": false,
+        "ins": false,
+        "del": false,
+        "rep": true        
+      },
+      dataModel:  $.extend(true, {}, jsonDataModel),
+      alignTitle: "center",
+      Left:       5,
+      Rows:       5,
+      Header:     null,
+      Footer:     null,
+      Icons:      '<button data-choice="DN" title="Download"><i class="fa fa-download"></i></button>'+
+                  (type == "" ? "" : '<button data-choice="LPH">LPH</button>'),
+      ID:         "id",
+      orderBy:    "ID",
+      orderType:  "DESC",
+      recId:      0,
+
+      User:       "", // dbuser
+      Sign:       slfMenuFile,  // navig identification
+
+      JSON_Data:  aPlan,
+      JSON_Sys:   aSys,//"json/sys.json",
+      filtFix:     filtFix,
+      
+      // functions + events
+      i18n: _,
+      refreshRec: function(ev, ui, callBack){
+        if(ui.REC.length == 0){
+          $("#id_PlanPreview").hide();
+          $("a", "#id_Plan_Form").hide();
+          return;
+        }
+        // Bauteil + Ebene + Planart
+        for(var x in oBEP)
+          $("input[name="+x+"_txt]", "#id_Plan_Form").val(oBEP[x][ui.REC[0][x]]);
+        // preview
+        var Path = $.sprintf(
+              "plan/%06i.0.jpg",
+              ui.REC[0].ID
+            );
+        $("#id_PlanPreview")
+        .show()
+        .attr("src", Path+"#"+Math.random());
+        $("select[name=type]", "#id_Plan_Form")
+        .selectmenu("refresh");
+      },
+      build: goTo,
+      clickButton: function(ev, ui){
+        switch(ui.choice){
+          case "DN": // ------------------------------------------------
+            if(ui.data.length == 0 || typeof ui.data[0] == "undefined"){
+              popup_message("Keine Dateie?");
+              return;
+            }
+            var Path = $.sprintf(
+              "plan/%06i.%s",
+              ui.data[0].ID, ui.data[0].name.replace(/^.*[.]/g, "")
+            );
+            $.ajax({
+              dataType: 'text',
+              mimeType: 'text/plain; charset=x-user-defined',
+              url: Path,
+              async: true,
+              cache: false,
+              success: function(D) {
+                saveDataLocal(D, ui.data[0].name);
+              }
+            })
+            .fail(function(err){
+              console.error(err);
+            });
+            break;
+          case "LPH":
+            lph_set(ui);
+            break;
+          default:
+            console.log(ui.choice);
+            break;
+        }
+      }
+    });
+    setTimeout(function(){
+      $T.focus();
+    }, 2000);
+  }
+  // -------------------------------------------------------------------
+  function goTo(){
+    change_all_lang($T, true);
+    // .................................................................
+    var opt = [];
+    for(var i in oPrj.val.planer)
+      opt.push($.sprintf(
+        '<option value="%s">%s</option>',
+        oPrj.val.planer[i].replace(/-.*$/g, ""),
+        oPrj.val.planer[i]
+      ));
+    $("select[name=type]", "#id_Plan_Form")
+    .html(opt.join(""))
+    .selectmenu({
+      disabled:true
+    });
+    // .................................................................
+    $("i", "#id_Plan_Form")
+    .hover(function(ev){
+      $(this).addClass("ui-state-active");
+    }, function(ev){
+      $(this).removeClass("ui-state-active");
+    })
+    .click(function(ev){
+      var c = $(this).data("choice");
+      if(c == "lock"){
+        if($("#id_Plan_Form", "#id_Plan").length){
+          $("button[data-choice=EDIT]", $T).click();
+          return;
+        }
+        var v = $("input[name=stop]", "#id_Plan_Form").val();
+        if(v == oUser.dbuser)
+          $("input[name=stop]", "#id_Plan_Form").val("");
+        else if(v == "")
+          $("input[name=stop]", "#id_Plan_Form").val(oUser.dbuser);
+        return;
+      }
+      var v = $("input[name="+c+"]", "#id_Plan_Form").val();
+      if(v != ""){
+        var W = window.open("mailto:"+v, "MAIL");
+        W.close();
+      }
+    });
+  }
+  // -------------------------------------------------------------------
+  function lph_set(ui){
+    var self = ui.element,
+        el = ui.button,
+        li = [
+          '<li data-choice="CANCEL">'+
+            '<div>'+
+              _("Cancel")+
+            '</div>'+
+          '</li>',
+          '<li><div></div></li>',
+          '<li data-choice=""><div>LPH</div></li>'
+        ],
+        $menu = $('ul.mk-tables-menu', self.element);
+    for(var i = 1;i <= 9;i++)
+      li.push($.sprintf(
+        '<li data-choice="%i"><div>LPH%i %s</div></li>',
+        i, i
+      ));
+    if(!$menu.is(":hidden")){
+      $(this)
+      .menu("destroy")
+      .hide();
+      self._overlay(false);
+      self.element.focus();
+      return false;
+    }
+    self._overlay(true);
+    $menu
+    .html(li.join(""))
+    .show()
+    .position({
+      my: "left top",
+      at: "left bottom",
+      of: el
+    })
+    .menu({
+      select: function(ev, uis){
+        var c = $(uis.item).data("choice");
+        if(typeof c == "undefined")
+          return;
+        switch(c){
+          case "CANCEL":
+            break;
+          default:
+            var t = uis.item.text();
+            $(el).button("option", "label", '<div>'+t+'</div>');
+            filtFix = "type=='"+type+"'";
+            if(c != "")
+              filtFix += " && lph == "+c;
+            $T
+            .tables("option", {
+              cont:    {},
+              filtFix: filtFix,
+              filt:    "",
+              filtSw:  false
+            })
+            .tables("refresh");
+        }
+        $(this).menu("option", "close")();
+      },
+      close: function(){
+        $menu
+        .off()
+        .menu("destroy")
+        .hide();
+        self._overlay(false);
+        self.element.focus();
+      }
+    })
+    .focus()
+    .on("keydown", function(ev){
+      if(ev.which == $.ui.keyCode.ESCAPE){
+        $menu.menu("option", "close")();
+      }
+      ev.preventDefault();
+      return false;
+    });
+    $($menu).on("mousewheel",  wheel);
+    $("ul", $menu).on("mousewheel",  wheel);
+    // mousewheel
+    function wheel(ev){
+      var dY = ev.originalEvent.deltaY;
+      $(this).scrollTop($(this).scrollTop() + 4 * dY);
+      return false;
+    }
+  }
+  // -------------------------------------------------------------------
+});
+// #####################################################################
+</script>
+<div id="id_Plan" tabindex="1" style="display:none" class="ui-corner-top">
+  <form id="id_Plan_Form" style="display:block" class="mk-tables-form">
+    <input type="submit" tabindex="-1" style="position:absolute;top:-1000px;display:none">
+    <table id="id_Plan_Table" tabindex="2">
+      <tbody>
+        <tr>
+          <td class="ui-widget-content ui-state-disabled" style="width:1%">
+            <input name="id" style="width:4em;text-align:center;background:transparent" type="text" disabled>
+          </td>
+          <td class="ui-widget-content ui-state-disabled" style="width:1%">
+            <input name="stmp" style="width:10em;text-align:center;background:transparent" type="text" disabled>
+          </td>
+          <td class="ui-widget-header"></td>
+          <td class="ui-widget-header" style="width:1%;white-space:nowrap">
+            Autor&nbsp;
+            <i class="fa fa-envelope-o" data-choice="autor"></i>
+            &nbsp;
+          </td>
+          <td class="ui-widget-content ui-state-disabled" style="width:1%">
+            <input name="autor" style="width:15em;text-align:center;background:transparent" class="upd" type="text" disabled>
+          </td>
+          <td class="ui-widget-header" style="width:1%;white-space:nowrap">
+            Sperre&nbsp;
+            <i class="fa fa-envelope-o" data-choice="stop"></i>
+            &nbsp;
+            <i class="fa fa-lock" data-choice="lock"></i>
+            &nbsp;
+          </td>
+          <td class="ui-widget-content ui-state-disabled" style="width:1%">
+            <input name="stop" style="width:15em;text-align:center;background:transparent" type="text" class="upd" disabled>
+          </td>
+          <td class="ui-widget-content" style="width:1%;padding:0">
+            <input data-enum='["-","X"]' type="button" title="Publizieren" name="public" class="enum upd" style="width:2em;background-color:transparent">
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <table tabindex="3" style="width:100%">
+      <tbody>
+        <tr>
+          <td class="ui-widget-header lang">Name</td>
+          <td class="ui-widget-content" colspan="10">
+            <input type="text" name="name" class="upd">
+          </td>
+        </tr>
+        <tr>
+          <td class="ui-widget-header">Bauteil</td>
+          <td class="ui-widget-header">
+            <input type="text" name="bauteil" class="upd c_val">
+            <input type="text" name="bauteil_txt" class="c_txt autocomplete">
+          </td>
+          <td class="ui-widget-header">Pl.Nr.</td>
+          <td class="ui-widget-header" colspan="8">
+            <input type="text" name="plnr" class="upd">
+          </td>
+        </tr>
+        <tr>
+          <td class="ui-widget-header">Ebene</td>
+          <td class="ui-widget-header">
+            <input type="text" name="ebene" class="upd c_val">
+            <input type="text" name="ebene_txt" class="c_txt autocomplete">
+          </td>
+          <td class="ui-widget-header">Lfd.Nr.</td>
+          <td class="ui-widget-header">
+            <input type="text" name="lnr" class="upd" style="width:3em;text-align:center">
+          </td>
+          <td class="ui-widget-header">Zusatz</td>
+          <td class="ui-widget-header" colspan="6">
+            <input type="text" name="zusatz" class="upd">
+          </td>
+        </tr>
+        <tr>
+          <td class="ui-widget-header" style="width:1%">Planart</td>
+          <td class="ui-widget-header" style="width:30em">
+            <input type="text" name="planart" class="upd c_val">
+            <input type="text" name="planart_txt" class="c_txt autocomplete">
+          </td>
+          <td class="ui-widget-header" style="width:1%">Index</td>
+          <td class="ui-widget-header" style="width:1%">
+            <input type="text" name="ix" class="upd" style="width:3em;text-align:center">
+          </td>
+          <td class="ui-widget-header" style="width:1%">Pl.Dat.</td>
+          <td class="ui-widget-header" style="width:1%">
+            <input type="text" name="pldatum" class="datepicker upd" style="text-align:center;width:7em">
+          </td>
+          <td class="ui-widget-header" style="width:1%">M</td>
+          <td class="ui-widget-header" style="width:1%">
+            <span style="width:2em;text-align:center">1 : </span>
+            <input type="text" name="m" class="upd" style="width:3em;text-align:center">
+          </td>
+          <td class="ui-widget-header"></td>
+          <td class="ui-widget-header" style="width:1%">LPH</td>
+          <td class="ui-widget-header" style="width:1%">
+            <input type="text" name="lph" class="upd" style="text-align:center;width:3em">
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <table tabindex="4" style="width:100%">
+      <tbody>
+        <tr>
+          <td class="ui-widget-header lang" style="width:40%;text-align:left">Note</td>
+          <td class="ui-widget-header" style="text-align:left">Vorschau</td>
+        </tr>
+        <tr>
+          <td class="ui-widget-content" style="height:200px">
+            <textarea name="note" class="upd"></textarea>
+          </td>
+          <td class="ui-widget-content">
+            <img id="id_PlanPreview" alt="Keine Vorschau!" style="height:200px;overflow:auto" class="zoom">
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="float:left;padding:6px">
+      Typ
+      <select name="type" class="ui-widget-content" style=""></select>
+    </div>
+  </form>
+</div>
+</div>
+</html>
+`;

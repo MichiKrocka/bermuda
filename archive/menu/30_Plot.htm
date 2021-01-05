@@ -1,0 +1,168 @@
+content["menu/30_Plot.htm"] = `
+<style type="text/css">
+<!--
+#id_Plot {
+  width:100%;
+  height:auto;
+  overflow:auto;
+}
+#id_Plot .mk-content-right,
+#id_Plot .mk-search,
+#id_Plot .mk-header {
+  border:0;
+}
+#id_Plot .mk-footer {
+  border-right-width:0;
+  border-bottom-width:0;
+}
+#id_Plot i {
+  border:0;
+}
+-->
+</style>
+<script language="JavaScript" type="text/javascript">
+// #####################################################################
+jQuery(function($){
+  // -------------------------------------------------------------------
+  var $T,
+      slfMenuFile = newMenu;
+  // -------------------------------------------------------------------
+  make();
+  // -------------------------------------------------------------------
+  function selectMenu(ui){
+    var oldMenuFile  = $(ui.oldMenu).data("menu"),
+        newMenuFile  = $(ui.newMenu).data("menu");
+
+    if(DEBUG > 0 && newMenuFile != slfMenuFile){
+      var div_menu = $("#id_Content>div").filter('[data-menu="'+oldMenuFile+'"]');
+      $.Topic("selectMenu").unsubscribe(selectMenu);
+      $T.tables("destroy");
+      div_menu.detach();
+      return
+    }
+
+    if(newMenuFile == slfMenuFile){
+      goTo();
+      if(typeof $T != "undefined")
+        $T
+        .tables("refresh")
+        .focus();
+    } else if(oldMenuFile == slfMenuFile){
+    }
+  }
+  // -------------------------------------------------------------------
+  function make(){
+    $.Topic("selectMenu").subscribe(selectMenu);
+    $T = $("#id_Plot").tables({
+      colModel: [{
+        indx:   "ID",
+        title:  "ID",
+        show:    true,
+        search:  true,
+        align:  "right",
+        width:  "3em"
+      },{
+        indx:   "stmp",
+        title:  "Stamp",
+        show:    true,
+        search:  true,
+        align:  "left",
+        width:  "10em"
+      },{
+        indx:   "dbuser",
+        title:  "User",
+        show:    true,
+        search:  true,
+        align:  "left",
+        width:  "10em"
+      },{
+        indx:   "n",
+        title:  "Number",
+        show:    true,
+        search:  true,
+        align:  "right",
+        width:  "3em"
+      },{
+        indx:   "repro",
+        title:  "Repro",
+        show:    true,
+        search:  true,
+        align:  "left",
+        width:  "10em"
+      },{
+        indx:   "txt",
+        title:  "Text",
+        show:    false,
+        search:  true,
+        align:  "left",
+        width:  "20em"
+      }],
+      accessModel: {
+        "edt": false,
+        "ins": false,
+        "del": false,
+        "rep": true        
+      },
+      dataModel:  $.extend(true, {}, jsonDataModel),
+      alignTitle: "center",
+      Left:       3,
+      Header:     null,
+      Footer:     null,
+      ID:         "id",
+      orderBy:    "ID",
+      orderType:  "DESC",
+      recId:      0,
+
+      User:       "", // dbuser
+      Sign:       slfMenuFile,  // navig identification
+
+      JSON_Data:  aPlot,
+      JSON_Sys:   aSys,//"json/sys.json",
+      
+      // functions + events
+      i18n: _,
+      build: goTo
+    });
+    setTimeout(function(){
+      $T.focus();
+    }, 1000);
+  }
+  // -------------------------------------------------------------------
+  function goTo(ev, ui){
+    change_all_lang($T, true);
+  }
+  // -------------------------------------------------------------------
+});
+// #####################################################################
+</script>
+<div id="id_Plot" tabindex="1" style="display:none" class="ui-corner-top">
+  <form id="id_Plot_Form" style="display:block" class="mk-tables-form">
+    <input type="submit" tabindex="-1" style="position:absolute;top:-1000px;display:none">
+    <table id="id_Plot_Table" tabindex="2">
+      <tbody>
+        <tr>
+          <td class="ui-widget-content ui-state-disabled" style="width:1%">
+            <input name="id" style="width:4em;text-align:center;background:transparent" type="text" disabled>
+          </td>
+          <td class="ui-widget-content ui-state-disabled" style="width:1%">
+            <input name="stmp" style="width:10em;text-align:center;background:transparent" type="text" disabled>
+          </td>
+          <td class="ui-widget-content" style="width:1%">
+            <input name="dbuser" style="width:23em" type="text">
+          </td>
+          <td class="ui-widget-header"></td>
+          <td class="ui-widget-header" style="width:1%">Anzahl</td>
+          <td class="ui-widget-content" style="width:1%">
+            <input name="n" type="text" style="width:2em;text-align:right">
+          </td>
+        </tr>
+        <tr>
+          <td class="ui-widget-content" colspan="6" style="height:25em">
+            <textarea name="txt" style="font-family:monospace"></textarea>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </form>
+</div>
+`;
