@@ -56,7 +56,7 @@ function load(){
     ID    = hash[2];
     switch(TABLE){
       case "plot": // --------------------------------------------------
-        $.post("js/repro.json", function(data){
+        $.get("js/repro.json", function(data){
           REPRO = data;
           var o = {
             id: "259e88811b229050b08679b67147b4ab",
