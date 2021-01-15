@@ -158,7 +158,7 @@ function plot(data, type){
     for(var i in data){
       var prop = [];
       files.push($.sprintf(
-        "bermuda/%s/%s/%06i.%s",
+        "%s/%s/%06i.%s",
         SQL_PRJ_BASE, type, data[i].id, data[i].name.replace(/^.*[.]/g, "")
       ));
       file = $.sprintf(

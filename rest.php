@@ -316,6 +316,9 @@ function Loa(){
 function Zip(){
   $FILES = json_decode($_REQUEST["files"]);
   $ZIPFILE = tempnam("/tmp", "ZIP");
+//file_put_contents("/tmp/sql", "END ".$file."\n".$_REQUEST["path"].PHP_EOL, FILE_APPEND);
+//file_put_contents("/tmp/sql", var_export($_REQUEST, true).PHP_EOL, FILE_APPEND);
+  
   $CMD = "zip -j -D ";
   if(isset($_REQUEST["pswd"]) && $_REQUEST["pswd"] != "")
     $CMD .= "-P ".$_REQUEST["pswd"]." ";
